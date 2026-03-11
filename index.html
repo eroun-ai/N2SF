@@ -1464,9 +1464,9 @@ function loadModelTemplate(num) {
     wizardState.assessments[ctrl.id] = {adequate: '', remedy: ''};
   });
   
-  // Navigate to wizard
-  showTab('wizard');
-  renderWizardStep();
+  // Navigate to wizard Step 1
+  wizardState.currentStep = 1;
+  showSection('wizard');
   
   // Show notification
   const notify = document.createElement('div');
