@@ -99,6 +99,9 @@ td:first-child { font-weight:600; white-space:nowrap; }
 /* Model cards */
 .model-card { background:white; border-radius:12px; padding:20px; box-shadow:var(--shadow); border:1px solid var(--border); cursor:pointer; transition:all 0.3s; }
 .model-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-lg); border-color:var(--accent); }
+.model-card .btn { border-radius:6px; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+
 .model-card .model-num { background:var(--accent); color:white; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1rem; margin-bottom:12px; }
 .model-card h4 { color:var(--primary); margin-bottom:8px; font-size:1rem; }
 .model-card p { color:var(--text-light); font-size:0.85rem; line-height:1.5; }
@@ -1284,6 +1287,196 @@ function updateStepNav() {
 function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
 // === MODELS ===
+// === MODEL TEMPLATE SYSTEM ===
+// Parse grade from strings like "업무 단말 (S등급)" -> {name:"업무 단말", grade:"S"}
+function parseGradeStr(s) {
+  const m = s.match(/(.+?)\s*\((\w)등급\)/);
+  if(m) return {name: m[1].trim(), grade: m[2]};
+  // Try S/O suffix pattern
+  const m2 = s.match(/(.+?)\s*\((S|C|O)\)/);
+  if(m2) return {name: m2[1].trim(), grade: m2[2]};
+  return {name: s, grade: 'O'};
+}
+
+function loadModelTemplate(num) {
+  const m = MODELS_DATA.models.find(x => x.number === num);
+  if(!m) return;
+  
+  // Reset wizard state
+  wizardState.currentStep = 1;
+  wizardState.completed = [false,false,false,false,false];
+  wizardState.bundles = [];
+  wizardState.bizGrades = {};
+  wizardState.sysGrades = {};
+  wizardState.locGrades = [];
+  wizardState.multiGradePolicy = '';
+  wizardState.scenarioThreats = [];
+  wizardState.derivedRequirements = [];
+  wizardState.derivedControls = [];
+  wizardState.additionalControls = '';
+  wizardState.assessments = {};
+  wizardState.orgName = '';
+  wizardState.projectName = '';
+  wizardState.responsible = '';
+  wizardState.brmDone = '';
+
+  // Parse subjects, objects, locations
+  const subjects = m.cso_evaluation.subjects.map(s => parseGradeStr(s));
+  const objects = m.cso_evaluation.objects.map(s => parseGradeStr(s));
+  const locations = m.cso_evaluation.locations.map(s => parseGradeStr(s));
+
+  // Determine representative object/bizInfo name
+  const bizInfoName = objects.length > 0 ? objects[0].name + ' 관련 업무정보' : m.name + ' 관련 업무정보';
+  const systemName = subjects.length > 0 ? subjects[0].name : '정보시스템';
+  const scenarioText = m.key_scenarios.join(', ');
+  
+  // Create bundle
+  wizardState.bundles.push({
+    bizInfo: bizInfoName,
+    system: systemName,
+    scenario: scenarioText,
+    secGoal: '기밀성, 무결성, 가용성 확보',
+    models: [num]
+  });
+
+  // Step 2: Grades
+  // BizInfo grades - derive from objects
+  const objGrade = objects.length > 0 ? objects[0].grade : 'O';
+  wizardState.bizGrades[bizInfoName] = {grade: objGrade, reason: '모델'+num+' 참조: '+objects.map(o=>o.name+'('+o.grade+')').join(', ')};
+  
+  // System grades
+  subjects.forEach(sub => {
+    wizardState.sysGrades[sub.name] = {grade: sub.grade, bizInfos: bizInfoName};
+  });
+  // If multiple subjects with same name but different grades already handled by the forEach
+  
+  // Location grades
+  const seenLocs = new Set();
+  locations.forEach(loc => {
+    if(!seenLocs.has(loc.name)) {
+      wizardState.locGrades.push({location: loc.name, grade: loc.grade});
+      seenLocs.add(loc.name);
+    }
+  });
+  
+  // Step 3: Scenario threats
+  // For each scenario, create a threat entry with first location/subject/object
+  const firstLoc = locations.length > 0 ? locations[0] : {name:'', grade:'O'};
+  const firstSub = subjects.length > 0 ? subjects[0] : {name:'', grade:'O'};
+  const firstObj = objects.length > 0 ? objects[0] : {name:'', grade:'O'};
+  
+  m.key_scenarios.forEach((scenario, idx) => {
+    const locG = firstLoc.grade;
+    const subG = firstSub.grade;
+    const objG = firstObj.grade;
+    const gradeDiff = (locG !== objG || subG !== objG) ? 'Y' : 'N';
+    
+    const prodResult = autoProductionStorage(locG, objG);
+    const moveResult = autoMovement(subG, objG);
+    
+    // Assign threats round-robin from model's key_threats
+    const threat = m.key_threats[idx % m.key_threats.length] || '';
+    
+    wizardState.scenarioThreats.push({
+      scenario: scenario,
+      location: firstLoc.name,
+      locGrade: locG,
+      subject: firstSub.name,
+      subGrade: subG,
+      object: firstObj.name,
+      objGrade: objG,
+      gradeDiff: gradeDiff,
+      productionResult: prodResult.result,
+      productionControl: prodResult.auto ? '자동도출' : '',
+      movementResult: moveResult.result,
+      movementControl: moveResult.auto ? '자동도출' : '',
+      additionalThreats: threat
+    });
+  });
+  
+  // Also add remaining threats not covered by scenarios
+  const usedThreats = new Set(wizardState.scenarioThreats.map(st => st.additionalThreats));
+  m.key_threats.filter(t => !usedThreats.has(t)).forEach(threat => {
+    const locG = firstLoc.grade;
+    const subG = firstSub.grade;
+    const objG = firstObj.grade;
+    const prodResult = autoProductionStorage(locG, objG);
+    const moveResult = autoMovement(subG, objG);
+    
+    wizardState.scenarioThreats.push({
+      scenario: '기타 위협 시나리오',
+      location: firstLoc.name,
+      locGrade: locG,
+      subject: firstSub.name,
+      subGrade: subG,
+      object: firstObj.name,
+      objGrade: objG,
+      gradeDiff: (locG !== objG || subG !== objG) ? 'Y' : 'N',
+      productionResult: prodResult.result,
+      productionControl: prodResult.auto ? '자동도출' : '',
+      movementResult: moveResult.result,
+      movementControl: moveResult.auto ? '자동도출' : '',
+      additionalThreats: threat
+    });
+  });
+  
+  // Step 4: Security controls
+  // Get the highest grade from all subjects/objects/locations
+  let maxGrade = 'O';
+  [...subjects, ...objects, ...locations].forEach(item => {
+    if(GRADE_ORDER[item.grade] > GRADE_ORDER[maxGrade]) maxGrade = item.grade;
+  });
+  
+  // Map model's key_security_controls to CONTROLS_DATA
+  const controlSet = new Set();
+  m.key_security_controls.forEach(ctrlId => {
+    // Find all controls matching or starting with the ID
+    CONTROLS_DATA.controls.forEach(ctrl => {
+      if(ctrl.id === ctrlId || ctrl.id.startsWith(ctrlId + '(')) {
+        // Check if control applies to the grade
+        if(ctrl[maxGrade]) {
+          controlSet.add(ctrl.id);
+        }
+      }
+    });
+  });
+  
+  wizardState.derivedControls = [];
+  controlSet.forEach(ctrlId => {
+    const ctrl = CONTROLS_DATA.controls.find(c => c.id === ctrlId);
+    if(ctrl) {
+      wizardState.derivedControls.push({
+        id: ctrl.id,
+        name: ctrl.name,
+        category: ctrl.category,
+        required: true,
+        implemented: '',
+        implPlan: ''
+      });
+    }
+  });
+  
+  // Sort controls by ID
+  wizardState.derivedControls.sort((a,b) => a.id.localeCompare(b.id));
+  
+  // Step 5: assessments - leave empty for user to fill
+  wizardState.derivedControls.forEach(ctrl => {
+    wizardState.assessments[ctrl.id] = {adequate: '', remedy: ''};
+  });
+  
+  // Navigate to wizard
+  showTab('wizard');
+  renderWizardStep();
+  
+  // Show notification
+  const notify = document.createElement('div');
+  notify.style.cssText = 'position:fixed;top:20px;right:20px;background:var(--accent);color:white;padding:16px 24px;border-radius:12px;z-index:9999;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,0.15);animation:fadeIn 0.3s;';
+  notify.textContent = '모델' + num + ' 템플릿이 로드되었습니다. 각 단계를 검토 후 수정하세요.';
+  document.body.appendChild(notify);
+  setTimeout(() => notify.remove(), 4000);
+}
+
+
 function renderModels() {
   const grid = document.getElementById('modelGrid');
   if(grid.children.length > 0) return;
@@ -1291,8 +1484,7 @@ function renderModels() {
   MODELS_DATA.models.forEach(m => {
     const card = document.createElement('div');
     card.className = 'model-card';
-    card.onclick = () => showModelDetail(m.number);
-    card.innerHTML = '<div class="model-num">'+m.number+'</div><h4>모델'+m.number+': '+m.name+'</h4><p>'+m.description.substring(0,100)+'...</p>';
+    card.innerHTML = '<div class="model-num">'+m.number+'</div><h4>모델'+m.number+': '+m.name+'</h4><p>'+m.description.substring(0,80)+'...</p><div style="margin-top:12px;display:flex;gap:8px;"><button class="btn btn-sm btn-primary" onclick="event.stopPropagation();loadModelTemplate('+m.number+')" style="font-size:0.75rem;padding:4px 10px;">템플릿 적용</button><button class="btn btn-sm btn-outline" onclick="showModelDetail('+m.number+')" style="font-size:0.75rem;padding:4px 10px;">상세보기</button></div>';
     grid.appendChild(card);
   });
   
@@ -1311,7 +1503,7 @@ function showModelDetail(num) {
   area.innerHTML = '<div class="card" style="margin-top:20px;border:2px solid var(--accent);">'+
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">'+
     '<h3 style="font-size:1.2rem;">모델'+m.number+': '+m.name+'</h3>'+
-    '<button class="btn btn-sm btn-outline" onclick="document.getElementById(\'modelDetailArea\').innerHTML=\'\'">닫기</button></div>'+
+    '<div style="display:flex;gap:8px;"><button class="btn btn-sm btn-primary" onclick="loadModelTemplate('+m.number+')">이 모델을 5단계 가이드 템플릿으로 사용</button><button class="btn btn-sm btn-outline" onclick="document.getElementById(\'modelDetailArea\').innerHTML=\'\'">닫기</button></div></div>'+
     '<p style="margin-bottom:16px;">'+m.description+'</p>'+
     '<div class="grid grid-2">'+
     '<div><strong>주요 사용 시나리오</strong><div class="tag-list">'+m.key_scenarios.map(s=>'<span class="tag">'+s+'</span>').join('')+'</div></div>'+
