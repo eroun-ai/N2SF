@@ -1,0 +1,1639 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>N2SF 실행가이드 - 공공기관 보안담당자용</title>
+<style>
+:root {
+  --primary: #1a365d;
+  --primary-light: #2b6cb0;
+  --accent: #3182ce;
+  --success: #38a169;
+  --warning: #d69e2e;
+  --danger: #e53e3e;
+  --bg: #f7fafc;
+  --card: #ffffff;
+  --text: #2d3748;
+  --text-light: #718096;
+  --border: #e2e8f0;
+  --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }
+.container { max-width:1200px; margin:0 auto; padding:0 20px; }
+
+/* Header */
+header { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); color:white; padding:0; position:sticky; top:0; z-index:100; box-shadow:var(--shadow-lg); }
+.header-inner { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; max-width:1200px; margin:0 auto; }
+.logo { font-size:1.4rem; font-weight:800; letter-spacing:-0.02em; }
+.logo small { font-size:0.7rem; font-weight:400; opacity:0.8; display:block; }
+nav { display:flex; gap:4px; flex-wrap:wrap; }
+nav button { background:rgba(255,255,255,0.15); border:none; color:white; padding:8px 16px; border-radius:8px; cursor:pointer; font-size:0.85rem; font-weight:500; transition:all 0.2s; }
+nav button:hover, nav button.active { background:rgba(255,255,255,0.3); }
+
+/* Main sections */
+.section { display:none; padding:30px 0; }
+.section.active { display:block; }
+
+/* Cards */
+.card { background:var(--card); border-radius:12px; padding:24px; margin-bottom:20px; box-shadow:var(--shadow); border:1px solid var(--border); }
+.card h3 { color:var(--primary); margin-bottom:12px; font-size:1.1rem; }
+.card p { color:var(--text-light); font-size:0.95rem; }
+
+/* Grid */
+.grid { display:grid; gap:20px; }
+.grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.grid-3 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+
+/* Steps */
+.step-nav { display:flex; gap:2px; margin-bottom:30px; background:var(--border); border-radius:12px; overflow:hidden; }
+.step-btn { flex:1; padding:14px 8px; text-align:center; background:white; border:none; cursor:pointer; font-size:0.8rem; font-weight:600; color:var(--text-light); transition:all 0.3s; position:relative; }
+.step-btn.active { background:var(--accent); color:white; }
+.step-btn.completed { background:var(--success); color:white; }
+.step-btn .step-num { display:block; font-size:1.2rem; margin-bottom:2px; }
+
+/* Wizard */
+.wizard-container { max-width:800px; margin:0 auto; }
+.question-card { background:white; border-radius:16px; padding:32px; box-shadow:var(--shadow-lg); border:1px solid var(--border); margin-bottom:20px; }
+.question-card h3 { color:var(--primary); font-size:1.1rem; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+.question-card .q-num { background:var(--accent); color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.8rem; flex-shrink:0; }
+.option-group { display:flex; flex-direction:column; gap:8px; margin:12px 0; }
+.option-group label { display:flex; align-items:center; gap:10px; padding:12px 16px; border:2px solid var(--border); border-radius:10px; cursor:pointer; transition:all 0.2s; font-size:0.95rem; }
+.option-group label:hover { border-color:var(--accent); background:#ebf8ff; }
+.option-group input:checked + span { font-weight:600; }
+.option-group input[type="radio"]:checked ~ span, .option-group input[type="checkbox"]:checked ~ span { color:var(--accent); }
+.option-group label:has(input:checked) { border-color:var(--accent); background:#ebf8ff; }
+textarea, input[type="text"] { width:100%; padding:12px 16px; border:2px solid var(--border); border-radius:10px; font-size:0.95rem; font-family:inherit; resize:vertical; transition:border-color 0.2s; }
+textarea:focus, input[type="text"]:focus { outline:none; border-color:var(--accent); }
+textarea { min-height:80px; }
+
+/* Buttons */
+.btn { padding:12px 24px; border-radius:10px; border:none; font-weight:600; font-size:0.95rem; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:8px; }
+.btn-primary { background:var(--accent); color:white; }
+.btn-primary:hover { background:var(--primary-light); }
+.btn-success { background:var(--success); color:white; }
+.btn-success:hover { background:#2f855a; }
+.btn-outline { background:white; color:var(--accent); border:2px solid var(--accent); }
+.btn-outline:hover { background:#ebf8ff; }
+.btn-danger { background:var(--danger); color:white; }
+.btn-sm { padding:6px 14px; font-size:0.8rem; }
+.btn-group { display:flex; gap:10px; margin-top:20px; flex-wrap:wrap; }
+
+/* Table */
+.table-wrap { overflow-x:auto; margin:16px 0; }
+table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+th, td { padding:10px 12px; text-align:left; border-bottom:1px solid var(--border); }
+th { background:var(--primary); color:white; font-weight:600; white-space:nowrap; position:sticky; top:0; }
+tr:hover { background:#f0f4f8; }
+td:first-child { font-weight:600; white-space:nowrap; }
+
+/* Badge */
+.badge { display:inline-block; padding:2px 10px; border-radius:20px; font-size:0.75rem; font-weight:600; }
+.badge-c { background:#fed7d7; color:#c53030; }
+.badge-s { background:#fefcbf; color:#975a16; }
+.badge-o { background:#c6f6d5; color:#276749; }
+.badge-info { background:#bee3f8; color:#2b6cb0; }
+
+/* Model cards */
+.model-card { background:white; border-radius:12px; padding:20px; box-shadow:var(--shadow); border:1px solid var(--border); cursor:pointer; transition:all 0.3s; }
+.model-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-lg); border-color:var(--accent); }
+.model-card .model-num { background:var(--accent); color:white; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1rem; margin-bottom:12px; }
+.model-card h4 { color:var(--primary); margin-bottom:8px; font-size:1rem; }
+.model-card p { color:var(--text-light); font-size:0.85rem; line-height:1.5; }
+.model-detail { display:none; }
+.model-detail.active { display:block; }
+
+/* Tags */
+.tag-list { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+.tag { background:#edf2f7; padding:4px 10px; border-radius:6px; font-size:0.78rem; color:var(--text); }
+
+/* Controls browser */
+.controls-filter { display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; align-items:center; }
+.controls-filter select { padding:8px 14px; border:2px solid var(--border); border-radius:8px; font-size:0.9rem; }
+.controls-filter input { padding:8px 14px; border:2px solid var(--border); border-radius:8px; font-size:0.9rem; flex:1; min-width:200px; }
+.control-count { color:var(--text-light); font-size:0.85rem; margin-bottom:10px; }
+
+/* Progress bar */
+.progress-bar { background:var(--border); border-radius:10px; height:8px; margin:16px 0; overflow:hidden; }
+.progress-fill { height:100%; background: linear-gradient(90deg, var(--accent), var(--success)); border-radius:10px; transition:width 0.5s ease; }
+
+/* Output section */
+.output-preview { background:#1a202c; color:#e2e8f0; padding:24px; border-radius:12px; font-family:'Fira Code', monospace; font-size:0.85rem; line-height:1.7; white-space:pre-wrap; max-height:500px; overflow-y:auto; }
+
+/* Hero */
+.hero { text-align:center; padding:60px 20px 40px; }
+.hero h1 { font-size:2.2rem; color:var(--primary); margin-bottom:12px; font-weight:800; }
+.hero p { font-size:1.1rem; color:var(--text-light); max-width:700px; margin:0 auto 30px; }
+.hero-stats { display:flex; justify-content:center; gap:40px; flex-wrap:wrap; margin:30px 0; }
+.hero-stat { text-align:center; }
+.hero-stat .num { font-size:2rem; font-weight:800; color:var(--accent); }
+.hero-stat .label { font-size:0.85rem; color:var(--text-light); }
+
+/* Info boxes */
+.info-box { background:#ebf8ff; border-left:4px solid var(--accent); padding:16px 20px; border-radius:0 8px 8px 0; margin:16px 0; }
+.info-box.warning { background:#fffff0; border-color:var(--warning); }
+.info-box.success { background:#f0fff4; border-color:var(--success); }
+.info-box strong { color:var(--primary); }
+
+/* Accordion */
+.accordion { border:1px solid var(--border); border-radius:10px; overflow:hidden; margin:10px 0; }
+.accordion-header { padding:14px 20px; background:white; cursor:pointer; display:flex; justify-content:space-between; align-items:center; font-weight:600; font-size:0.95rem; }
+.accordion-header:hover { background:#f7fafc; }
+.accordion-header::after { content:"\25BC"; font-size:0.7rem; color:var(--text-light); transition:transform 0.3s; }
+.accordion-header.open::after { transform:rotate(180deg); }
+.accordion-body { display:none; padding:16px 20px; border-top:1px solid var(--border); background:#fafafa; }
+.accordion-body.open { display:block; }
+
+/* Print */
+@media print {
+  header, nav, .step-nav, .btn-group, .controls-filter { display:none !important; }
+  .section { display:block !important; page-break-before:always; }
+  .card { break-inside:avoid; box-shadow:none; border:1px solid #ccc; }
+}
+
+/* Responsive */
+@media (max-width:768px) {
+  .header-inner { flex-direction:column; gap:10px; }
+  nav { justify-content:center; }
+  .hero h1 { font-size:1.6rem; }
+  .step-nav { flex-direction:column; }
+  .step-btn { text-align:left; padding:10px 16px; }
+  .grid-2, .grid-3 { grid-template-columns:1fr; }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background:var(--bg); }
+::-webkit-scrollbar-thumb { background:var(--text-light); border-radius:3px; }
+
+/* Tab submenus */
+.subtab-nav { display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; }
+.subtab-btn { padding:8px 18px; border:2px solid var(--border); border-radius:8px; background:white; cursor:pointer; font-size:0.85rem; font-weight:500; transition:all 0.2s; }
+.subtab-btn:hover { border-color:var(--accent); }
+.subtab-btn.active { background:var(--accent); color:white; border-color:var(--accent); }
+.subtab-content { display:none; }
+.subtab-content.active { display:block; }
+
+.ctrl-table { width:100%; border-collapse:collapse; font-size:0.9rem; }
+.ctrl-table th, .ctrl-table td { padding:10px 12px; border:1px solid var(--border); text-align:left; }
+.ctrl-table th { background:var(--bg); color:var(--text); font-weight:600; position:sticky; top:0; }
+.ctrl-table tr:hover { background:#f7fafc; }
+.bt-detail { transition: all 0.3s; }
+.tag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:0.8rem; }
+.badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:0.85rem; font-weight:600; }
+
+.bundle-card { transition: all 0.2s; }
+.bundle-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+.question-card th, .card th { background:var(--bg); color:var(--text); }
+.question-card td, .card td { color:var(--text); }
+.question-card table, .card table { color:var(--text); }
+</style>
+</head>
+<body>
+<header>
+<div class="header-inner">
+<div class="logo">N2SF 실행가이드<small>공공기관 보안담당자를 위한 국가 망 보안체계 안내서 v1.0</small></div>
+<nav>
+<button class="active" onclick="showSection('home')">홈</button>
+<button onclick="showSection('basics')">기본지식</button>
+<button onclick="showSection('wizard')">5단계 가이드</button>
+<button onclick="showSection('models')">정보서비스 모델</button>
+<button onclick="showSection('controls')">보안통제 항목</button>
+<button onclick="showSection('ai')">AI 보안</button>
+<button onclick="showSection('output')">산출물</button>
+</nav>
+</div>
+</header>
+
+<!-- HOME -->
+<div id="home" class="section active">
+<div class="container">
+<div class="hero">
+<h1>N2SF 실행가이드</h1>
+<p>국가 망 보안체계(National Network Security Framework)의 적용절차를 단계별로 안내하여, 보안담당자가 질문에 답하며 따라가기만 하면 최종 산출물이 자동 작성됩니다.</p>
+<div class="hero-stats">
+<div class="hero-stat"><div class="num">5</div><div class="label">적용 단계</div></div>
+<div class="hero-stat"><div class="num">274</div><div class="label">보안통제 항목</div></div>
+<div class="hero-stat"><div class="num">11</div><div class="label">정보서비스 모델</div></div>
+<div class="hero-stat"><div class="num">3</div><div class="label">보안등급 (C/S/O)</div></div>
+</div>
+<div class="btn-group" style="justify-content:center;">
+<button class="btn btn-primary" onclick="showSection('wizard')">5단계 가이드 시작하기 &rarr;</button>
+<button class="btn btn-outline" onclick="showSection('basics')">기본지식 먼저 학습</button>
+</div>
+</div>
+
+<div class="grid grid-3">
+<div class="card" style="cursor:pointer;" onclick="showSection('wizard')">
+<h3>&#9313; 5단계 실행가이드</h3>
+<p>준비 &rarr; 등급분류 &rarr; 위협식별 &rarr; 보안대책 수립 &rarr; 적절성 평가까지 질문에 답하며 산출물을 자동 생성합니다.</p>
+</div>
+<div class="card" style="cursor:pointer;" onclick="showSection('models')">
+<h3>&#9314; 정보서비스 모델 (11종)</h3>
+<p>생성형 AI 활용, 클라우드 협업, 모바일 업무환경 등 11가지 모델의 위협식별·보안통제를 참조합니다.</p>
+</div>
+<div class="card" style="cursor:pointer;" onclick="showSection('controls')">
+<h3>&#9315; 보안통제 항목 (274개)</h3>
+<p>권한·인증·분리격리·통제·데이터·정보자산 6대 영역의 보안통제 항목을 검색·필터링합니다.</p>
+</div>
+</div>
+</div>
+</div>
+
+<!-- BASICS -->
+<div id="basics" class="section">
+<div class="container">
+<h2 style="color:var(--primary);margin-bottom:24px;font-size:1.5rem;">기본지식: 보안담당자가 반드시 알아야 할 사항</h2>
+
+<div class="subtab-nav">
+<button class="subtab-btn active" onclick="showSubtab('basics','b-overview')">N2SF 개요</button>
+<button class="subtab-btn" onclick="showSubtab('basics','b-cso')">C/S/O 등급분류</button>
+<button class="subtab-btn" onclick="showSubtab('basics','b-procedure')">5단계 절차</button>
+<button class="subtab-btn" onclick="showSubtab('basics','b-threat')">위협 모델링</button>
+<button class="subtab-btn" onclick="showSubtab('basics','b-principles')">보안원칙</button>
+<button class="subtab-btn" onclick="showSubtab('basics','b-review')">보안성 검토</button>
+</div>
+
+<div id="b-overview" class="subtab-content active">
+<div class="card">
+<h3>N2SF란 무엇인가?</h3>
+<p>국가 망 보안체계(N2SF: National Network Security Framework)는 기존 획일적 망 분리 정책을 넘어, 업무정보의 중요도에 따라 <strong>기밀(C), 민감(S), 공개(O)</strong> 등급으로 분류하고, 등급별로 차등적인 보안통제를 적용하는 보안 프레임워크입니다.</p>
+<div class="info-box" style="margin-top:16px;">
+<strong>핵심 변화:</strong> 망 분리(물리적 분리) 중심 &rarr; 업무정보 중요도 기반 차등 보안통제 적용
+</div>
+</div>
+<div class="card">
+<h3>추진 목표 5가지</h3>
+<p><strong>1.</strong> 망 분리 중심에서 N2SF 기반 보안정책으로 패러다임 전환<br>
+<strong>2.</strong> AI·클라우드 등 신기술 융합으로 스마트 업무환경 실현<br>
+<strong>3.</strong> 산학연관 협력으로 기관 자율보안 접목<br>
+<strong>4.</strong> 기관별 자율 추진 지원, 관련 제도 점진적 개선<br>
+<strong>5.</strong> 공공정보의 보안성·활용성 동시 제고, 디지털 경제 활성화</p>
+</div>
+<div class="card">
+<h3>적용 대상 및 시기</h3>
+<p><strong>적용 대상:</strong> 국가·공공기관의 모든 정보화사업 (신규 구축 및 기존 운영 중 정보서비스의 N2SF 적용 포함)<br>
+<strong>가이드라인 버전:</strong> 1.0 (2025년 9월 발간)<br>
+<strong>참고 문서:</strong> 부록1(보안통제 항목 해설서), 부록2(정보서비스 모델 해설서 1~11), AI보안 가이드북</p>
+</div>
+</div>
+
+<div id="b-cso" class="subtab-content">
+<div class="card">
+<h3>C/S/O 등급분류 기준</h3>
+<div class="table-wrap">
+<table>
+<tr><th>등급</th><th>분류기준</th><th>정보공개법 근거</th></tr>
+<tr><td><span class="badge badge-c">C 기밀</span></td><td>비밀, 안보·국방·외교·수사 등 기밀정보, 국민 생명·안전 직결 정보</td><td>제9조 제1호~제4호</td></tr>
+<tr><td><span class="badge badge-s">S 민감</span></td><td>감사·감독·검사·인사관리 관련 정보, 개인정보, 경영·영업 비밀 등</td><td>제9조 제5호~제8호 + 기타(로그, 임시백업)</td></tr>
+<tr><td><span class="badge badge-o">O 공개</span></td><td>C·S 외 모든 정보, 비공개 필요성 소멸 정보</td><td>그 외</td></tr>
+</table>
+</div>
+</div>
+<div class="card">
+<h3>등급분류 절차</h3>
+<p><strong>1단계:</strong> 업무정보 분류 &rarr; <strong>2단계:</strong> 정보시스템 분류 (업무정보 등급 기반) &rarr; <strong>3단계:</strong> 위치 분류 (물리적·논리적 영역)</p>
+<div class="info-box warning">
+<strong>주의:</strong> 하나의 정보시스템에 서로 다른 등급의 업무정보가 포함될 경우, 가장 높은 등급을 해당 시스템의 등급으로 분류합니다. 가급적 동일 등급별로 시스템을 분리 운영하는 것을 권고합니다.
+</div>
+</div>
+</div>
+
+<div id="b-procedure" class="subtab-content">
+<div class="card">
+<h3>N2SF 적용 5단계 절차 요약</h3>
+<div class="table-wrap">
+<table>
+<tr><th>단계</th><th>영문명</th><th>주요활동</th><th>활동 수</th></tr>
+<tr><td><strong>1절 준비</strong></td><td>Prepare</td><td>적용계획 수립, 업무·기능 분석, 업무정보 식별, 정보시스템 식별, 정보서비스 식별</td><td>5개</td></tr>
+<tr><td><strong>2절 등급분류</strong></td><td>Categorize</td><td>업무정보 C/S/O 분류, 정보시스템 C/S/O 분류</td><td>2개</td></tr>
+<tr><td><strong>3절 위협식별</strong></td><td>Identify</td><td>모델링 및 C/S/O 평가, 보안원칙 적용, 보안위협 식별</td><td>3개</td></tr>
+<tr><td><strong>4절 보안대책 수립</strong></td><td>Select</td><td>보안 요구사항 도출, 보안통제 선택 및 구현계획 수립</td><td>2개</td></tr>
+<tr><td><strong>5절 적절성 평가·조정</strong></td><td>Assess</td><td>적절성 평가, 협의·조정, 평가결과 확인</td><td>3개</td></tr>
+</table>
+</div>
+</div>
+</div>
+
+<div id="b-threat" class="subtab-content">
+<div class="card">
+<h3>위치-주체-객체 모델링</h3>
+<p>정보서비스 환경을 <strong>위치(Domain)-주체(Subject)-객체(Object)</strong>로 단순화하여 위협을 식별합니다.</p>
+<div class="info-box">
+<strong>주체(Subject):</strong> 업무정보를 활용하는 정보시스템 (단말 등)<br>
+<strong>객체(Object):</strong> 주체가 접속/이용하는 대상 정보시스템 (서버 등)<br>
+<strong>위치(Domain):</strong> 주체가 위치한 물리적·논리적 영역
+</div>
+<p style="margin-top:12px;">각 위치·주체·객체에 C/S/O 등급을 부여한 후, <strong>등급이 서로 다를 경우</strong> 보안대책이 필요합니다.</p>
+</div>
+</div>
+
+<div id="b-principles" class="subtab-content">
+<div class="grid grid-2">
+<div class="card">
+<h3>정보 생산·저장 원칙</h3>
+<p>정보시스템은 <strong>자신의 보안등급과 동일하거나 낮은</strong> 등급의 업무정보를 생산·저장할 수 있습니다.</p>
+<div class="info-box warning">
+<strong>위협 예시:</strong> O등급 생성형 AI 서비스에서 S등급 업무정보가 생산·저장되는 경우 &rarr; 보안대책 필요
+</div>
+</div>
+<div class="card">
+<h3>정보 이동 원칙</h3>
+<p>업무정보는 <strong>자신의 보안등급과 동일하거나 높은</strong> 등급의 정보시스템으로 이동할 수 있습니다.</p>
+<div class="info-box warning">
+<strong>위협 예시:</strong> S등급 단말에서 O등급 서비스로 S등급 정보를 업로드하는 경우 &rarr; 보안대책 필요
+</div>
+</div>
+</div>
+</div>
+
+<div id="b-review" class="subtab-content">
+<div class="card">
+<h3>보안성 검토 시 제출 문서 (4종)</h3>
+<div class="table-wrap">
+<table>
+<tr><th>제출문서</th><th>N2SF 수행결과 반영 내용</th></tr>
+<tr><td>사업계획서</td><td>보안통제 구현(제품도입, 개발 등)에 관한 세부내용 및 계획 포함</td></tr>
+<tr><td>제안요청서</td><td>보안통제 구현을 위한 세부내용 및 계획 포함</td></tr>
+<tr><td>정보통신망 구성도</td><td>보안통제가 적용된 네트워크 구조 반영</td></tr>
+<tr><td><strong>자체 보안대책</strong></td><td>N2SF 5단계 주요활동 수행결과를 종합한 최종 산출물 (별도 서식)</td></tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- WIZARD (5-Step Guide) -->
+<div id="wizard" class="section">
+<div class="container">
+<h2 style="color:var(--primary);margin-bottom:8px;font-size:1.5rem;">N2SF 5단계 실행가이드</h2>
+<p style="color:var(--text-light);margin-bottom:20px;">각 단계의 질문에 답하면 자체 보안대책(최종 산출물)이 자동 생성됩니다.</p>
+
+<div class="progress-bar"><div class="progress-fill" id="wizardProgress" style="width:0%"></div></div>
+
+<div class="step-nav" id="stepNav">
+<button class="step-btn active" onclick="goToStep(1)"><span class="step-num">1</span>준비</button>
+<button class="step-btn" onclick="goToStep(2)"><span class="step-num">2</span>등급분류</button>
+<button class="step-btn" onclick="goToStep(3)"><span class="step-num">3</span>위협식별</button>
+<button class="step-btn" onclick="goToStep(4)"><span class="step-num">4</span>보안대책</button>
+<button class="step-btn" onclick="goToStep(5)"><span class="step-num">5</span>적절성 평가</button>
+</div>
+
+<div class="wizard-container" id="wizardContent">
+<!-- Dynamically populated -->
+</div>
+</div>
+</div>
+
+<!-- MODELS -->
+<div id="models" class="section">
+<div class="container">
+<h2 style="color:var(--primary);margin-bottom:8px;font-size:1.5rem;">정보서비스 모델 (부록2)</h2>
+<p style="color:var(--text-light);margin-bottom:24px;">11가지 주요 정보서비스 모델의 위협식별, 보안통제, 구성방안을 참조하세요. 부록에 해당하지 않는 경우에도 유사 모델을 참고하여 보안대책을 수립할 수 있습니다.</p>
+<div class="grid grid-3" id="modelGrid">
+<!-- Dynamically populated -->
+</div>
+<div id="modelDetailArea"></div>
+</div>
+</div>
+
+<!-- CONTROLS -->
+<div id="controls" class="section">
+<div class="container">
+<h2 style="color:var(--primary);margin-bottom:8px;font-size:1.5rem;">보안통제 항목 (부록1)</h2>
+<p style="color:var(--text-light);margin-bottom:20px;">274개 보안통제 항목을 카테고리·등급별로 검색하고 필터링합니다.</p>
+<div class="controls-filter">
+<select id="ctrlCategory" onchange="filterControls()">
+<option value="">전체 카테고리</option>
+</select>
+<select id="ctrlGrade" onchange="filterControls()">
+<option value="">전체 등급</option>
+<option value="C">C등급 (기밀)</option>
+<option value="S">S등급 (민감)</option>
+<option value="O">O등급 (공개)</option>
+</select>
+<input type="text" id="ctrlSearch" placeholder="ID 또는 항목명 검색..." oninput="filterControls()">
+</div>
+<div class="control-count" id="controlCount"></div>
+<div class="table-wrap">
+<table id="controlsTable">
+<thead>
+<tr><th>N2SF ID</th><th>항목명</th><th>카테고리</th><th>세부분류</th><th>C</th><th>S</th><th>O</th></tr>
+</thead>
+<tbody id="controlsBody"></tbody>
+</table>
+</div>
+</div>
+</div>
+
+<!-- AI Security -->
+<div id="ai" class="section">
+<div class="container">
+<h2 style="color:var(--primary);margin-bottom:8px;font-size:1.5rem;">AI 보안 실행가이드</h2>
+<p style="color:var(--text-light);margin-bottom:24px;">국가·공공기관 AI보안 가이드북 (2025.12) 기반 — N2SF 연계 AI 보안 실행가이드</p>
+
+<div class="subtab-nav">
+<button class="subtab-btn active" onclick="showAiTab('ai-overview',this)">개요·원칙</button>
+<button class="subtab-btn" onclick="showAiTab('ai-threats',this)">보안위협 (T01~T15)</button>
+<button class="subtab-btn" onclick="showAiTab('ai-controls',this)">보안통제 (M01~M30)</button>
+<button class="subtab-btn" onclick="showAiTab('ai-build',this)">구축유형별 가이드</button>
+<button class="subtab-btn" onclick="showAiTab('ai-use',this)">활용유형별 가이드</button>
+<button class="subtab-btn" onclick="showAiTab('ai-n2sf',this)">N2SF 연관성</button>
+</div>
+
+<div id="ai-overview" class="subtab-content active"></div>
+<div id="ai-threats" class="subtab-content"></div>
+<div id="ai-controls" class="subtab-content"></div>
+<div id="ai-build" class="subtab-content"></div>
+<div id="ai-use" class="subtab-content"></div>
+<div id="ai-n2sf" class="subtab-content"></div>
+<div id="aiContent" style="display:none;"></div>
+</div>
+</div>
+
+<!-- OUTPUT -->
+<div id="output" class="section">
+<div class="container">
+<h2 style="color:var(--primary);margin-bottom:8px;font-size:1.5rem;">최종 산출물 미리보기</h2>
+<p style="color:var(--text-light);margin-bottom:20px;">5단계 가이드를 완료하면 자체 보안대책 문서가 자동 생성됩니다.</p>
+<div class="btn-group" style="margin-bottom:20px;">
+<button class="btn btn-primary" onclick="generateOutput()">산출물 생성</button>
+<button class="btn btn-outline" onclick="downloadOutput()">텍스트 다운로드</button>
+<button class="btn btn-outline" onclick="window.print()">인쇄</button>
+</div>
+<div class="output-preview" id="outputPreview">
+[5단계 가이드를 먼저 완료해주세요. 각 단계의 질문에 답변하면 이곳에 자체 보안대책(최종 산출물)이 자동 생성됩니다.]
+</div>
+</div>
+</div>
+
+<footer style="text-align:center;padding:40px 20px;color:var(--text-light);font-size:0.85rem;border-top:1px solid var(--border);margin-top:40px;">
+<p>N2SF 실행가이드 v1.0 | 국가 망 보안체계 보안 가이드라인 1.0 기반 | 공공기관 보안담당자용</p>
+<p style="margin-top:4px;">본 가이드는 참고용이며, 최종 적용 시 원본 가이드라인 및 관련 지침을 반드시 확인하세요.</p>
+</footer>
+
+<script>
+// === DATA ===
+const CONTROLS_DATA = {"categories": ["권한", "인증", "분리 및 격리", "통제", "데이터", "정보자산"], "controls": [{"id": "N2SF-AC-1", "name": "계정 관리 자동화", "category": "권한", "subcategory": "계정 관리", "C": true, "S": true, "O": false}, {"id": "N2SF-AC-1(1)", "name": "동적 계정 관리", "category": "권한", "subcategory": "계정 관리", "C": true, "S": true, "O": false}, {"id": "N2SF-AC-1(2)", "name": "계정 상태", "category": "권한", "subcategory": "계정 관리", "C": true, "S": true, "O": false}, {"id": "N2SF-AC-1(3)", "name": "계정 자동", "category": "권한", "subcategory": "계정 관리", "C": true, "S": false, "O": false}, {"id": "N2SF-AC-1(4)", "name": "계정 자동", "category": "권한", "subcategory": "계정 관리", "C": true, "S": true, "O": true}, {"id": "N2SF-AC-1(5)", "name": "불필요한 관리자", "category": "권한", "subcategory": "계정 관리", "C": true, "S": true, "O": true}, {"id": "N2SF-AC-2", "name": "공유 및 그룹 계정", "category": "권한", "subcategory": "계정 관리", "C": true, "S": false, "O": false}, {"id": "N2SF-AC-3", "name": "의심스러운 계정", "category": "권한", "subcategory": "계정 관리", "C": true, "S": true, "O": false}, {"id": "N2SF-AC-3(1)", "name": "위험에 노출된", "category": "권한", "subcategory": "계정 관리", "C": true, "S": true, "O": true}, {"id": "N2SF-AC-3(2)", "name": "내부 사용자", "category": "권한", "subcategory": "계정 관리", "C": true, "S": true, "O": false}, {"id": "N2SF-AC-3(3)", "name": "외부 사용자", "category": "권한", "subcategory": "계정 관리", "C": true, "S": true, "O": false}, {"id": "N2SF-AC-M1", "name": "감사 활동 자동화", "category": "권한", "subcategory": "계정 관리", "C": true, "S": false, "O": false}, {"id": "N2SF-AC-M2", "name": "감사기록 생성", "category": "권한", "subcategory": "계정 관리", "C": true, "S": true, "O": true}, {"id": "N2SF-AC-M3", "name": "세션 감사", "category": "권한", "subcategory": "계정 관리", "C": true, "S": true, "O": false}, {"id": "N2SF-AM-1", "name": "암호모듈 기반", "category": "인증", "subcategory": "인증수단", "C": true, "S": true, "O": true}, {"id": "N2SF-AM-2", "name": "비밀번호 기반", "category": "인증", "subcategory": "인증수단", "C": true, "S": true, "O": true}, {"id": "N2SF-AM-3", "name": "공개키 기반 인증", "category": "인증", "subcategory": "인증수단", "C": true, "S": true, "O": true}, {"id": "N2SF-AM-4", "name": "초기 인증수단", "category": "인증", "subcategory": "인증수단", "C": true, "S": true, "O": true}, {"id": "N2SF-AM-5", "name": "인증수단 보호", "category": "인증", "subcategory": "인증수단", "C": true, "S": true, "O": false}, {"id": "N2SF-AM-6", "name": "암호화 되지 않은", "category": "인증", "subcategory": "인증수단", "C": true, "S": true, "O": true}, {"id": "N2SF-AM-7", "name": "캐시된 인증수단", "category": "인증", "subcategory": "인증수단", "C": true, "S": true, "O": true}, {"id": "N2SF-AM-8", "name": "공개키 기반", "category": "인증", "subcategory": "인증수단", "C": true, "S": true, "O": false}, {"id": "N2SF-AM-9", "name": "소유기반 인증", "category": "인증", "subcategory": "인증수단", "C": true, "S": true, "O": true}, {"id": "N2SF-AM-M1", "name": "인증 시스템 운영", "category": "인증", "subcategory": "인증수단", "C": true, "S": true, "O": false}, {"id": "N2SF-AM-M2", "name": "인증수단 정기적", "category": "인증", "subcategory": "인증수단", "C": true, "S": true, "O": false}, {"id": "N2SF-AP-1", "name": "기관 발급", "category": "인증", "subcategory": "인증정책", "C": true, "S": true, "O": false}, {"id": "N2SF-AP-2", "name": "인증 프로파일", "category": "인증", "subcategory": "인증정책", "C": true, "S": true, "O": false}, {"id": "N2SF-AP-3", "name": "그룹 계정 사용자", "category": "인증", "subcategory": "인증정책", "C": true, "S": true, "O": false}, {"id": "N2SF-AP-4", "name": "재인증", "category": "인증", "subcategory": "인증정책", "C": true, "S": false, "O": false}, {"id": "N2SF-AP-5", "name": "동시 중복 인증", "category": "인증", "subcategory": "인증정책", "C": true, "S": false, "O": false}, {"id": "N2SF-AP-M1", "name": "인증 정책 수립 및", "category": "인증", "subcategory": "인증정책", "C": true, "S": true, "O": false}, {"id": "N2SF-AP-M2", "name": "인증 관리자의", "category": "인증", "subcategory": "인증정책", "C": true, "S": true, "O": false}, {"id": "N2SF-AP-M3", "name": "인증 관련", "category": "인증", "subcategory": "인증정책", "C": true, "S": true, "O": true}, {"id": "N2SF-AU-1", "name": "계정 인증 재전송", "category": "인증", "subcategory": "인증보호", "C": true, "S": true, "O": true}, {"id": "N2SF-AU-2", "name": "통합인증(SSO,", "category": "인증", "subcategory": "인증보호", "C": true, "S": true, "O": false}, {"id": "N2SF-AU-3", "name": "권한 위임", "category": "인증", "subcategory": "인증보호", "C": true, "S": true, "O": false}, {"id": "N2SF-AU-4", "name": "생체 인증 공격", "category": "인증", "subcategory": "인증보호", "C": true, "S": true, "O": true}, {"id": "N2SF-AU-5", "name": "인증 시스템 구성", "category": "인증", "subcategory": "인증보호", "C": true, "S": true, "O": false}, {"id": "N2SF-AU-5(1)", "name": "비밀번호", "category": "인증", "subcategory": "인증보호", "C": true, "S": false, "O": false}, {"id": "N2SF-AU-5(2)", "name": "대체 보안수단", "category": "인증", "subcategory": "인증보호", "C": true, "S": false, "O": false}, {"id": "N2SF-AU-6", "name": "공개키", "category": "인증", "subcategory": "인증보호", "C": true, "S": true, "O": true}, {"id": "N2SF-AU-M1", "name": "인증 정보 접근", "category": "인증", "subcategory": "인증보호", "C": true, "S": true, "O": true}, {"id": "N2SF-AU-M2", "name": "인증 위협 및", "category": "인증", "subcategory": "인증보호", "C": true, "S": true, "O": true}, {"id": "N2SF-BC-1", "name": "블루투스 데이터", "category": "통제", "subcategory": "블루투스연결", "C": true, "S": true, "O": false}, {"id": "N2SF-CD-1", "name": "도메인 간 정보", "category": "통제", "subcategory": "크로스도메인보안", "C": true, "S": true, "O": false}, {"id": "N2SF-CD-10", "name": "전송 실패 보호 및", "category": "통제", "subcategory": "크로스도메인보안", "C": true, "S": true, "O": false}, {"id": "N2SF-CD-11", "name": "등급 간 콘텐츠", "category": "통제", "subcategory": "크로스도메인보안", "C": true, "S": true, "O": false}, {"id": "N2SF-CD-12", "name": "사용자 및 단말", "category": "통제", "subcategory": "크로스도메인보안", "C": true, "S": true, "O": true}, {"id": "N2SF-CD-13", "name": "트래픽 흐름", "category": "통제", "subcategory": "크로스도메인보안", "C": true, "S": true, "O": false}, {"id": "N2SF-CD-2", "name": "다단계 보안", "category": "통제", "subcategory": "크로스도메인보안", "C": true, "S": false, "O": false}, {"id": "N2SF-CD-3", "name": "일방향 전송 기술", "category": "통제", "subcategory": "크로스도메인보안", "C": true, "S": true, "O": false}, {"id": "N2SF-CD-4", "name": "검증 기반 릴레이", "category": "통제", "subcategory": "크로스도메인보안", "C": true, "S": true, "O": false}, {"id": "N2SF-CD-5", "name": "파일 유형 기반", "category": "통제", "subcategory": "크로스도메인보안", "C": true, "S": true, "O": false}, {"id": "N2SF-CD-6", "name": "콘텐츠 무해화", "category": "통제", "subcategory": "크로스도메인보안", "C": true, "S": false, "O": false}, {"id": "N2SF-CD-7", "name": "메타데이터 기반", "category": "통제", "subcategory": "크로스도메인보안", "C": true, "S": true, "O": false}, {"id": "N2SF-CD-8", "name": "승인된 CDS", "category": "통제", "subcategory": "크로스도메인보안", "C": true, "S": true, "O": true}, {"id": "N2SF-CD-9", "name": "CDS 우회 경로", "category": "통제", "subcategory": "크로스도메인보안", "C": true, "S": true, "O": false}, {"id": "N2SF-CD-M1", "name": "CDS 운용 정책", "category": "통제", "subcategory": "크로스도메인보안", "C": true, "S": true, "O": true}, {"id": "N2SF-CD-M2", "name": "CDS 통제 로그", "category": "통제", "subcategory": "크로스도메인보안", "C": true, "S": true, "O": true}, {"id": "N2SF-CD-M3", "name": "도메인 간 정보", "category": "통제", "subcategory": "크로스도메인보안", "C": true, "S": true, "O": false}, {"id": "N2SF-CD-M4", "name": "CDS 구성요소", "category": "통제", "subcategory": "크로스도메인보안", "C": true, "S": true, "O": true}, {"id": "N2SF-DA-1", "name": "단말 무결성 검증", "category": "인증", "subcategory": "단말인증", "C": true, "S": true, "O": false}, {"id": "N2SF-DA-2", "name": "정보서비스 식별", "category": "인증", "subcategory": "단말인증", "C": true, "S": true, "O": false}, {"id": "N2SF-DA-3", "name": "단말 식별 및 인증", "category": "인증", "subcategory": "단말인증", "C": true, "S": true, "O": false}, {"id": "N2SF-DA-3(1)", "name": "인가 단말 인증", "category": "인증", "subcategory": "단말인증", "C": true, "S": true, "O": false}, {"id": "N2SF-DA-3(2)", "name": "비인가 단말 인증", "category": "인증", "subcategory": "단말인증", "C": true, "S": false, "O": false}, {"id": "N2SF-DA-4", "name": "인증된 단말의", "category": "인증", "subcategory": "단말인증", "C": true, "S": false, "O": false}, {"id": "N2SF-DA-5", "name": "외부 단말 접속", "category": "인증", "subcategory": "단말인증", "C": true, "S": true, "O": true}, {"id": "N2SF-DT-1", "name": "전송 권한 확인", "category": "데이터", "subcategory": "데이터전송", "C": true, "S": true, "O": false}, {"id": "N2SF-DT-2", "name": "정보교환 중단", "category": "데이터", "subcategory": "데이터전송", "C": true, "S": true, "O": false}, {"id": "N2SF-DT-3", "name": "전송간 암호화", "category": "데이터", "subcategory": "데이터전송", "C": true, "S": true, "O": false}, {"id": "N2SF-DT-4", "name": "메시지 외부", "category": "데이터", "subcategory": "데이터전송", "C": true, "S": true, "O": false}, {"id": "N2SF-DT-5", "name": "통신 패턴 은폐", "category": "데이터", "subcategory": "데이터전송", "C": true, "S": false, "O": false}, {"id": "N2SF-DT-6", "name": "데이터 전송 간", "category": "데이터", "subcategory": "데이터전송", "C": true, "S": true, "O": false}, {"id": "N2SF-DU-1", "name": "오프라인 저장", "category": "데이터", "subcategory": "데이터사용", "C": true, "S": false, "O": false}, {"id": "N2SF-DU-2", "name": "데이터 암호화", "category": "데이터", "subcategory": "데이터사용", "C": true, "S": true, "O": true}, {"id": "N2SF-DU-3", "name": "사용중 데이터", "category": "데이터", "subcategory": "데이터사용", "C": true, "S": false, "O": false}, {"id": "N2SF-DU-4", "name": "데이터 갱신 및", "category": "데이터", "subcategory": "데이터사용", "C": true, "S": true, "O": false}, {"id": "N2SF-DU-M1", "name": "데이터 접근 제어", "category": "데이터", "subcategory": "데이터사용", "C": true, "S": true, "O": false}, {"id": "N2SF-DU-M2", "name": "데이터 사용", "category": "데이터", "subcategory": "데이터사용", "C": true, "S": true, "O": false}, {"id": "N2SF-DU-M3", "name": "데이터 사용 정책", "category": "데이터", "subcategory": "데이터사용", "C": true, "S": true, "O": false}, {"id": "N2SF-DU-M4", "name": "데이터 저장", "category": "데이터", "subcategory": "데이터사용", "C": true, "S": true, "O": false}, {"id": "N2SF-DV-1", "name": "하드웨어 무결성", "category": "정보자산", "subcategory": "하드웨어", "C": true, "S": true, "O": false}, {"id": "N2SF-DV-10", "name": "저장장치 연결", "category": "정보자산", "subcategory": "하드웨어", "C": true, "S": false, "O": false}, {"id": "N2SF-DV-11", "name": "읽기전용 매체", "category": "정보자산", "subcategory": "하드웨어", "C": true, "S": false, "O": false}, {"id": "N2SF-DV-12", "name": "장치 펌웨어", "category": "정보자산", "subcategory": "하드웨어", "C": true, "S": false, "O": false}, {"id": "N2SF-DV-2", "name": "하드웨어 기반", "category": "정보자산", "subcategory": "하드웨어", "C": true, "S": false, "O": false}, {"id": "N2SF-DV-3", "name": "하드웨어", "category": "정보자산", "subcategory": "하드웨어", "C": true, "S": true, "O": false}, {"id": "N2SF-DV-4", "name": "포트 및 입출력", "category": "정보자산", "subcategory": "하드웨어", "C": true, "S": true, "O": false}, {"id": "N2SF-DV-5", "name": "외부 정보자산", "category": "정보자산", "subcategory": "하드웨어", "C": true, "S": false, "O": false}, {"id": "N2SF-DV-6", "name": "통신 기능이", "category": "정보자산", "subcategory": "하드웨어", "C": true, "S": false, "O": false}, {"id": "N2SF-DV-7", "name": "기관 접속용 장치", "category": "정보자산", "subcategory": "하드웨어", "C": true, "S": false, "O": false}, {"id": "N2SF-DV-8", "name": "장치 자동 잠금", "category": "정보자산", "subcategory": "하드웨어", "C": true, "S": true, "O": true}, {"id": "N2SF-DV-9", "name": "읽기전용 매체", "category": "정보자산", "subcategory": "하드웨어", "C": true, "S": false, "O": false}, {"id": "N2SF-DV-M1", "name": "하드웨어 장치", "category": "정보자산", "subcategory": "하드웨어", "C": true, "S": true, "O": false}, {"id": "N2SF-DV-M2", "name": "반입 장치 검사", "category": "정보자산", "subcategory": "하드웨어", "C": true, "S": true, "O": false}, {"id": "N2SF-EA-1", "name": "검증필 암호모듈", "category": "데이터", "subcategory": "암호 모듈 사용", "C": true, "S": true, "O": true}, {"id": "N2SF-EA-2", "name": "국가용 암호자재", "category": "데이터", "subcategory": "암호 모듈 사용", "C": true, "S": false, "O": false}, {"id": "N2SF-EA-3", "name": "특수목적용", "category": "데이터", "subcategory": "암호 모듈 사용", "C": true, "S": true, "O": false}, {"id": "N2SF-EB-1", "name": "연결 접점 제한", "category": "통제", "subcategory": "외부경계", "C": true, "S": true, "O": false}, {"id": "N2SF-EB-10", "name": "정보시스템", "category": "통제", "subcategory": "외부경계", "C": true, "S": true, "O": true}, {"id": "N2SF-EB-11", "name": "외부 경계 보호", "category": "통제", "subcategory": "외부경계", "C": true, "S": true, "O": true}, {"id": "N2SF-EB-12", "name": "외부 통신용", "category": "통제", "subcategory": "외부경계", "C": true, "S": true, "O": true}, {"id": "N2SF-EB-13", "name": "오류정보 발신자", "category": "통제", "subcategory": "외부경계", "C": true, "S": true, "O": false}, {"id": "N2SF-EB-14", "name": "외부 DNS 통신", "category": "통제", "subcategory": "외부경계", "C": true, "S": false, "O": false}, {"id": "N2SF-EB-15", "name": "우회 통신 수단", "category": "통제", "subcategory": "외부경계", "C": true, "S": true, "O": false}, {"id": "N2SF-EB-2", "name": "서비스별 외부", "category": "통제", "subcategory": "외부경계", "C": true, "S": true, "O": true}, {"id": "N2SF-EB-3", "name": "화이트리스트", "category": "통제", "subcategory": "외부경계", "C": true, "S": true, "O": false}, {"id": "N2SF-EB-4", "name": "분할 터널링(Split", "category": "통제", "subcategory": "외부경계", "C": true, "S": true, "O": true}, {"id": "N2SF-EB-5", "name": "통신 경유(proxy)", "category": "통제", "subcategory": "외부경계", "C": true, "S": false, "O": false}, {"id": "N2SF-EB-6", "name": "외부로의", "category": "통제", "subcategory": "외부경계", "C": true, "S": true, "O": false}, {"id": "N2SF-EB-7", "name": "호스트 기반 경계", "category": "통제", "subcategory": "외부경계", "C": true, "S": true, "O": false}, {"id": "N2SF-EB-8", "name": "운영관리용", "category": "통제", "subcategory": "외부경계", "C": true, "S": true, "O": true}, {"id": "N2SF-EB-9", "name": "전용 장치를 통한", "category": "통제", "subcategory": "외부경계", "C": true, "S": true, "O": true}, {"id": "N2SF-EB-M1", "name": "개인 식별정보", "category": "통제", "subcategory": "외부경계", "C": true, "S": true, "O": false}, {"id": "N2SF-EB-M2", "name": "외부 경계 정책", "category": "통제", "subcategory": "외부경계", "C": true, "S": true, "O": true}, {"id": "N2SF-EB-M3", "name": "외부 통신 로그", "category": "통제", "subcategory": "외부경계", "C": true, "S": true, "O": true}, {"id": "N2SF-EB-M4", "name": "외부 경계 위협", "category": "통제", "subcategory": "외부경계", "C": true, "S": false, "O": false}, {"id": "N2SF-EB-M5", "name": "비상 시 외부 통신", "category": "통제", "subcategory": "외부경계", "C": true, "S": true, "O": false}, {"id": "N2SF-EI-1", "name": "외부 자격증명", "category": "인증", "subcategory": "외부인증수단", "C": true, "S": true, "O": false}, {"id": "N2SF-EI-2", "name": "외부 인증수단", "category": "인증", "subcategory": "외부인증수단", "C": true, "S": true, "O": false}, {"id": "N2SF-EI-M1", "name": "외부 인증수단", "category": "인증", "subcategory": "외부인증수단", "C": true, "S": false, "O": false}, {"id": "N2SF-EK-1", "name": "암호 키 설정", "category": "데이터", "subcategory": "암호 키 관리", "C": true, "S": true, "O": true}, {"id": "N2SF-EK-2", "name": "암호 키 생성", "category": "데이터", "subcategory": "암호 키 관리", "C": true, "S": true, "O": false}, {"id": "N2SF-EK-3", "name": "암호 키 저장", "category": "데이터", "subcategory": "암호 키 관리", "C": true, "S": true, "O": true}, {"id": "N2SF-EK-4", "name": "암호 키 사용", "category": "데이터", "subcategory": "암호 키 관리", "C": true, "S": true, "O": false}, {"id": "N2SF-EK-5", "name": "암호 키 폐기", "category": "데이터", "subcategory": "암호 키 관리", "C": true, "S": true, "O": true}, {"id": "N2SF-EK-6", "name": "전자서명 검증", "category": "데이터", "subcategory": "암호 키 관리", "C": true, "S": true, "O": true}, {"id": "N2SF-EK-M1", "name": "암호 키 저장소", "category": "데이터", "subcategory": "암호 키 관리", "C": true, "S": true, "O": false}, {"id": "N2SF-EK-M2", "name": "암호 키 관리 정책", "category": "데이터", "subcategory": "암호 키 관리", "C": true, "S": true, "O": false}, {"id": "N2SF-EK-M3", "name": "키 접근 권한 및", "category": "데이터", "subcategory": "암호 키 관리", "C": true, "S": true, "O": false}, {"id": "N2SF-IF-1", "name": "정보흐름의 동적", "category": "통제", "subcategory": "정보흐름", "C": true, "S": true, "O": false}, {"id": "N2SF-IF-10", "name": "정보 전송 방식", "category": "통제", "subcategory": "정보흐름", "C": true, "S": true, "O": false}, {"id": "N2SF-IF-11", "name": "데이터 전송 차단", "category": "통제", "subcategory": "정보흐름", "C": true, "S": false, "O": false}, {"id": "N2SF-IF-12", "name": "정보흐름 통제", "category": "통제", "subcategory": "정보흐름", "C": true, "S": true, "O": false}, {"id": "N2SF-IF-13", "name": "시간기반/상황기", "category": "통제", "subcategory": "정보흐름", "C": true, "S": true, "O": false}, {"id": "N2SF-IF-14", "name": "보안등급 기반", "category": "통제", "subcategory": "정보흐름", "C": true, "S": true, "O": false}, {"id": "N2SF-IF-15", "name": "전용 통신망 구성", "category": "통제", "subcategory": "정보흐름", "C": true, "S": true, "O": false}, {"id": "N2SF-IF-2", "name": "암호화된", "category": "통제", "subcategory": "정보흐름", "C": true, "S": true, "O": false}, {"id": "N2SF-IF-3", "name": "임베디드 데이터", "category": "통제", "subcategory": "정보흐름", "C": true, "S": true, "O": true}, {"id": "N2SF-IF-4", "name": "메타데이터 활용", "category": "통제", "subcategory": "정보흐름", "C": true, "S": false, "O": false}, {"id": "N2SF-IF-5", "name": "일방향 정보흐름", "category": "통제", "subcategory": "정보흐름", "C": true, "S": false, "O": false}, {"id": "N2SF-IF-6", "name": "필터링 규칙", "category": "통제", "subcategory": "정보흐름", "C": true, "S": true, "O": true}, {"id": "N2SF-IF-7", "name": "데이터 유형", "category": "통제", "subcategory": "정보흐름", "C": true, "S": true, "O": false}, {"id": "N2SF-IF-8", "name": "인가되지 않은", "category": "통제", "subcategory": "정보흐름", "C": true, "S": true, "O": false}, {"id": "N2SF-IF-9", "name": "출발지점과", "category": "통제", "subcategory": "정보흐름", "C": true, "S": true, "O": true}, {"id": "N2SF-IF-M1", "name": "정보흐름 통제", "category": "통제", "subcategory": "정보흐름", "C": true, "S": true, "O": true}, {"id": "N2SF-IF-M2", "name": "정보흐름 로그", "category": "통제", "subcategory": "정보흐름", "C": true, "S": true, "O": true}, {"id": "N2SF-IF-M3", "name": "정보흐름 통제", "category": "통제", "subcategory": "정보흐름", "C": true, "S": true, "O": false}, {"id": "N2SF-IF-M4", "name": "비인가 흐름 탐지", "category": "통제", "subcategory": "정보흐름", "C": true, "S": true, "O": false}, {"id": "N2SF-IF-M5", "name": "통제 실패·예외", "category": "통제", "subcategory": "정보흐름", "C": true, "S": true, "O": false}, {"id": "N2SF-IM-1", "name": "공개된 식별자의", "category": "권한", "subcategory": "식별자 관리", "C": true, "S": false, "O": false}, {"id": "N2SF-IM-2", "name": "사용자 상태 식별", "category": "권한", "subcategory": "식별자 관리", "C": true, "S": true, "O": false}, {"id": "N2SF-IM-3", "name": "기관 간 상호 관리", "category": "권한", "subcategory": "식별자 관리", "C": true, "S": true, "O": false}, {"id": "N2SF-IM-4", "name": "상호(쌍,", "category": "권한", "subcategory": "식별자 관리", "C": true, "S": false, "O": false}, {"id": "N2SF-IM-5", "name": "속성 유지관리 및", "category": "권한", "subcategory": "식별자 관리", "C": true, "S": false, "O": false}, {"id": "N2SF-IN-1", "name": "구성요소 목록", "category": "정보자산", "subcategory": "정보시스템구성요소", "C": true, "S": true, "O": false}, {"id": "N2SF-IN-1(1)", "name": "정보시스템", "category": "정보자산", "subcategory": "정보시스템구성요소", "C": true, "S": true, "O": false}, {"id": "N2SF-IN-1(2)", "name": "구성요소 목록", "category": "정보자산", "subcategory": "정보시스템구성요소", "C": true, "S": true, "O": false}, {"id": "N2SF-IN-1(3)", "name": "구성요소 목록", "category": "정보자산", "subcategory": "정보시스템구성요소", "C": true, "S": false, "O": false}, {"id": "N2SF-IN-10", "name": "소프트웨어 설치", "category": "정보자산", "subcategory": "정보시스템구성요소", "C": true, "S": true, "O": false}, {"id": "N2SF-IN-11", "name": "재기동 서비스", "category": "정보자산", "subcategory": "정보시스템구성요소", "C": true, "S": true, "O": true}, {"id": "N2SF-IN-12", "name": "신뢰성이 보장된", "category": "정보자산", "subcategory": "정보시스템구성요소", "C": true, "S": true, "O": true}, {"id": "N2SF-IN-13", "name": "정보의 비지속성", "category": "정보자산", "subcategory": "정보시스템구성요소", "C": true, "S": true, "O": false}, {"id": "N2SF-IN-14", "name": "연결의 비지속성", "category": "정보자산", "subcategory": "정보시스템구성요소", "C": true, "S": true, "O": false}, {"id": "N2SF-IN-15", "name": "구성요소", "category": "정보자산", "subcategory": "정보시스템구성요소", "C": true, "S": true, "O": false}, {"id": "N2SF-IN-16", "name": "악성코드 감염", "category": "정보자산", "subcategory": "정보시스템구성요소", "C": true, "S": true, "O": true}, {"id": "N2SF-IN-2", "name": "비인가 구성요소", "category": "정보자산", "subcategory": "정보시스템구성요소", "C": true, "S": true, "O": false}, {"id": "N2SF-IN-3", "name": "물리적 위치 식별", "category": "정보자산", "subcategory": "정보시스템구성요소", "C": true, "S": false, "O": false}, {"id": "N2SF-IN-4", "name": "변경 사항 테스트", "category": "정보자산", "subcategory": "정보시스템구성요소", "C": true, "S": true, "O": false}, {"id": "N2SF-IN-5", "name": "비인가 변경 방지", "category": "정보자산", "subcategory": "정보시스템구성요소", "C": true, "S": true, "O": false}, {"id": "N2SF-IN-6", "name": "불필요한", "category": "정보자산", "subcategory": "정보시스템구성요소", "C": true, "S": true, "O": false}, {"id": "N2SF-IN-7", "name": "주기적인", "category": "정보자산", "subcategory": "정보시스템구성요소", "C": true, "S": true, "O": false}, {"id": "N2SF-IN-8", "name": "비인가", "category": "정보자산", "subcategory": "정보시스템구성요소", "C": true, "S": true, "O": false}, {"id": "N2SF-IN-9", "name": "소프트웨어", "category": "정보자산", "subcategory": "정보시스템구성요소", "C": true, "S": true, "O": true}, {"id": "N2SF-IS-1", "name": "프로세스 격리", "category": "분리 및 격리", "subcategory": "격리", "C": true, "S": false, "O": false}, {"id": "N2SF-IS-2", "name": "정보시스템", "category": "분리 및 격리", "subcategory": "격리", "C": true, "S": true, "O": true}, {"id": "N2SF-IS-3", "name": "애플리케이션", "category": "분리 및 격리", "subcategory": "격리", "C": true, "S": true, "O": false}, {"id": "N2SF-IS-4", "name": "네트워크 격리", "category": "분리 및 격리", "subcategory": "격리", "C": true, "S": true, "O": true}, {"id": "N2SF-IS-5", "name": "가상화 환경 격리", "category": "분리 및 격리", "subcategory": "격리", "C": true, "S": true, "O": true}, {"id": "N2SF-IS-6", "name": "격리 위반사항", "category": "분리 및 격리", "subcategory": "격리", "C": true, "S": true, "O": true}, {"id": "N2SF-IV-1", "name": "관리자 승인", "category": "권한", "subcategory": "신원 검증", "C": true, "S": true, "O": false}, {"id": "N2SF-IV-2", "name": "신원 증거 제출", "category": "권한", "subcategory": "신원 검증", "C": true, "S": true, "O": false}, {"id": "N2SF-IV-2(1)", "name": "신원 증거 검증", "category": "권한", "subcategory": "신원 검증", "C": true, "S": true, "O": false}, {"id": "N2SF-IV-3", "name": "외부 신원 검증", "category": "권한", "subcategory": "신원 검증", "C": true, "S": true, "O": true}, {"id": "N2SF-IV-M1", "name": "대면 신원 증거", "category": "권한", "subcategory": "신원 검증", "C": true, "S": false, "O": false}, {"id": "N2SF-LI-1", "name": "유효한 인증정보", "category": "인증", "subcategory": "로그인", "C": true, "S": true, "O": true}, {"id": "N2SF-LI-10", "name": "로그인 부가 정보", "category": "인증", "subcategory": "로그인", "C": true, "S": false, "O": false}, {"id": "N2SF-LI-2", "name": "로그인 실패에", "category": "인증", "subcategory": "로그인", "C": true, "S": true, "O": false}, {"id": "N2SF-LI-3", "name": "로그인 실패에", "category": "인증", "subcategory": "로그인", "C": true, "S": true, "O": false}, {"id": "N2SF-LI-4", "name": "계정 잠금 해제", "category": "인증", "subcategory": "로그인", "C": true, "S": true, "O": false}, {"id": "N2SF-LI-5", "name": "정보시스템 사용", "category": "인증", "subcategory": "로그인", "C": true, "S": false, "O": false}, {"id": "N2SF-LI-6", "name": "직전 로그인 정보", "category": "인증", "subcategory": "로그인", "C": true, "S": true, "O": false}, {"id": "N2SF-LI-7", "name": "실패 로그인 정보", "category": "인증", "subcategory": "로그인", "C": true, "S": false, "O": false}, {"id": "N2SF-LI-8", "name": "로그인 이력 정보", "category": "인증", "subcategory": "로그인", "C": true, "S": true, "O": false}, {"id": "N2SF-LI-9", "name": "계정 정보 변경", "category": "인증", "subcategory": "로그인", "C": true, "S": false, "O": false}, {"id": "N2SF-LI-M1", "name": "로그인 실패", "category": "인증", "subcategory": "로그인", "C": true, "S": false, "O": false}, {"id": "N2SF-LI-M2", "name": "주기적 로그인", "category": "인증", "subcategory": "로그인", "C": true, "S": true, "O": false}, {"id": "N2SF-LP-1", "name": "정보시스템 접근", "category": "권한", "subcategory": "최소 권한", "C": true, "S": true, "O": false}, {"id": "N2SF-LP-2", "name": "보안통제 권한", "category": "권한", "subcategory": "최소 권한", "C": true, "S": true, "O": true}, {"id": "N2SF-LP-3", "name": "보안통제 계정", "category": "권한", "subcategory": "최소 권한", "C": true, "S": true, "O": true}, {"id": "N2SF-LP-4", "name": "관리자 권한 제한", "category": "권한", "subcategory": "최소 권한", "C": true, "S": true, "O": true}, {"id": "N2SF-LP-4(1)", "name": "원격접속을 통한", "category": "권한", "subcategory": "최소 권한", "C": false, "S": true, "O": true}, {"id": "N2SF-LP-4(2)", "name": "기관 이외 인원의", "category": "권한", "subcategory": "최소 권한", "C": true, "S": true, "O": true}, {"id": "N2SF-LP-4(3)", "name": "사용자에게 부여된", "category": "권한", "subcategory": "최소 권한", "C": false, "S": false, "O": false}, {"id": "N2SF-LP-4(4)", "name": "관리자 권한 실행", "category": "권한", "subcategory": "최소 권한", "C": true, "S": true, "O": true}, {"id": "N2SF-LP-5", "name": "코드 실행권한", "category": "권한", "subcategory": "최소 권한", "C": true, "S": true, "O": true}, {"id": "N2SF-LP-M1", "name": "특별권한 사용자", "category": "권한", "subcategory": "최소 권한", "C": true, "S": true, "O": false}, {"id": "N2SF-LP-M2", "name": "주요 사용자 위험", "category": "권한", "subcategory": "최소 권한", "C": true, "S": true, "O": false}, {"id": "N2SF-LP-M3", "name": "접근권한 사전", "category": "권한", "subcategory": "최소 권한", "C": true, "S": true, "O": true}, {"id": "N2SF-LP-M4", "name": "접근권한과 정보", "category": "권한", "subcategory": "최소 권한", "C": true, "S": true, "O": true}, {"id": "N2SF-MA-1", "name": "관리자 계정", "category": "인증", "subcategory": "다중요소 인증", "C": true, "S": true, "O": true}, {"id": "N2SF-MA-2", "name": "사용자 계정", "category": "인증", "subcategory": "다중요소 인증", "C": true, "S": true, "O": false}, {"id": "N2SF-MA-3", "name": "다중요소 인증", "category": "인증", "subcategory": "다중요소 인증", "C": true, "S": true, "O": true}, {"id": "N2SF-MA-4", "name": "다중요소 인증", "category": "인증", "subcategory": "다중요소 인증", "C": true, "S": true, "O": true}, {"id": "N2SF-MA-5", "name": "특정상황에서의", "category": "인증", "subcategory": "다중요소 인증", "C": true, "S": true, "O": false}, {"id": "N2SF-MA-M1", "name": "다중인증요소", "category": "인증", "subcategory": "다중요소 인증", "C": true, "S": true, "O": true}, {"id": "N2SF-MD-1", "name": "모바일 코드", "category": "정보자산", "subcategory": "모바일단말", "C": true, "S": true, "O": true}, {"id": "N2SF-MD-10", "name": "위치 기반 보안", "category": "정보자산", "subcategory": "모바일단말", "C": true, "S": true, "O": false}, {"id": "N2SF-MD-11", "name": "네트워크 접근", "category": "정보자산", "subcategory": "모바일단말", "C": true, "S": false, "O": false}, {"id": "N2SF-MD-2", "name": "자동 실행 금지", "category": "정보자산", "subcategory": "모바일단말", "C": true, "S": true, "O": false}, {"id": "N2SF-MD-3", "name": "제한된", "category": "정보자산", "subcategory": "모바일단말", "C": true, "S": true, "O": false}, {"id": "N2SF-MD-4", "name": "민감정보 소통", "category": "정보자산", "subcategory": "모바일단말", "C": true, "S": true, "O": false}, {"id": "N2SF-MD-5", "name": "모바일 장치", "category": "정보자산", "subcategory": "모바일단말", "C": true, "S": true, "O": false}, {"id": "N2SF-MD-6", "name": "데이터 자동삭제", "category": "정보자산", "subcategory": "모바일단말", "C": true, "S": true, "O": false}, {"id": "N2SF-MD-7", "name": "탈옥·루팅 탐지 및", "category": "정보자산", "subcategory": "모바일단말", "C": true, "S": true, "O": true}, {"id": "N2SF-MD-8", "name": "블루투스·USB", "category": "정보자산", "subcategory": "모바일단말", "C": true, "S": true, "O": false}, {"id": "N2SF-MD-9", "name": "비인가 앱 탐지 및", "category": "정보자산", "subcategory": "모바일단말", "C": true, "S": true, "O": false}, {"id": "N2SF-MD-M1", "name": "장비 식별 및", "category": "정보자산", "subcategory": "모바일단말", "C": true, "S": true, "O": false}, {"id": "N2SF-MD-M2", "name": "정책 위반 자동", "category": "정보자산", "subcategory": "모바일단말", "C": true, "S": false, "O": false}, {"id": "N2SF-RA-1", "name": "원격접속", "category": "통제", "subcategory": "원격접속", "C": true, "S": true, "O": true}, {"id": "N2SF-RA-2", "name": "원격접속 세션", "category": "통제", "subcategory": "원격접속", "C": true, "S": true, "O": true}, {"id": "N2SF-RA-3", "name": "원격접속위치", "category": "통제", "subcategory": "원격접속", "C": true, "S": true, "O": false}, {"id": "N2SF-RA-4", "name": "관리자 권한 통제", "category": "통제", "subcategory": "원격접속", "C": false, "S": true, "O": false}, {"id": "N2SF-RA-5", "name": "원격접속 정보", "category": "통제", "subcategory": "원격접속", "C": true, "S": true, "O": true}, {"id": "N2SF-RA-6", "name": "원격접속 자동", "category": "통제", "subcategory": "원격접속", "C": true, "S": true, "O": true}, {"id": "N2SF-RA-7", "name": "원격 명령 신뢰성", "category": "통제", "subcategory": "원격접속", "C": true, "S": false, "O": false}, {"id": "N2SF-RA-M1", "name": "원격접속 정책", "category": "통제", "subcategory": "원격접속", "C": true, "S": true, "O": false}, {"id": "N2SF-RA-M2", "name": "원격접속 로그", "category": "통제", "subcategory": "원격접속", "C": true, "S": true, "O": true}, {"id": "N2SF-RA-M3", "name": "원격접속 보안", "category": "통제", "subcategory": "원격접속", "C": true, "S": true, "O": false}, {"id": "N2SF-SG-1", "name": "하드웨어 기반", "category": "분리 및 격리", "subcategory": "분리", "C": true, "S": true, "O": false}, {"id": "N2SF-SG-2", "name": "운영체제(OS)", "category": "분리 및 격리", "subcategory": "분리", "C": true, "S": true, "O": true}, {"id": "N2SF-SG-2(1)", "name": "시스템 파티셔닝", "category": "분리 및 격리", "subcategory": "분리", "C": true, "S": false, "O": false}, {"id": "N2SF-SG-3", "name": "소프트웨어 기반", "category": "분리 및 격리", "subcategory": "분리", "C": true, "S": true, "O": false}, {"id": "N2SF-SG-3(1)", "name": "프로세스 기반", "category": "분리 및 격리", "subcategory": "분리", "C": true, "S": true, "O": false}, {"id": "N2SF-SG-4", "name": "IP 체계 분리", "category": "분리 및 격리", "subcategory": "분리", "C": true, "S": true, "O": true}, {"id": "N2SF-SG-5", "name": "보안･운영관리", "category": "분리 및 격리", "subcategory": "분리", "C": true, "S": true, "O": false}, {"id": "N2SF-SG-5(1)", "name": "개발/테스트 환경", "category": "분리 및 격리", "subcategory": "분리", "C": true, "S": true, "O": true}, {"id": "N2SF-SG-6", "name": "보안 기능과", "category": "분리 및 격리", "subcategory": "분리", "C": true, "S": true, "O": false}, {"id": "N2SF-SG-M1", "name": "분리 정책 및 절차", "category": "분리 및 격리", "subcategory": "분리", "C": true, "S": true, "O": false}, {"id": "N2SF-SG-M2", "name": "보안·운영 인프라", "category": "분리 및 격리", "subcategory": "분리", "C": true, "S": false, "O": false}, {"id": "N2SF-SG-M3", "name": "분리된 시스템", "category": "분리 및 격리", "subcategory": "분리", "C": true, "S": true, "O": false}, {"id": "N2SF-SG-M4", "name": "분리환경", "category": "분리 및 격리", "subcategory": "분리", "C": true, "S": true, "O": false}, {"id": "N2SF-SG-M5", "name": "분리 위반사항", "category": "분리 및 격리", "subcategory": "분리", "C": true, "S": false, "O": false}, {"id": "N2SF-SN-1", "name": "로그아웃 세션", "category": "통제", "subcategory": "세션", "C": true, "S": true, "O": true}, {"id": "N2SF-SN-2", "name": "세션별 고유", "category": "통제", "subcategory": "세션", "C": true, "S": true, "O": true}, {"id": "N2SF-SN-3", "name": "동시 접속 세션", "category": "통제", "subcategory": "세션", "C": true, "S": false, "O": false}, {"id": "N2SF-SN-4", "name": "세션 종료", "category": "통제", "subcategory": "세션", "C": true, "S": true, "O": true}, {"id": "N2SF-SN-4(1)", "name": "사용자 기반", "category": "통제", "subcategory": "세션", "C": true, "S": true, "O": true}, {"id": "N2SF-SN-4(2)", "name": "종료 메시지", "category": "통제", "subcategory": "세션", "C": true, "S": true, "O": true}, {"id": "N2SF-SN-5", "name": "로그인 유효시간", "category": "통제", "subcategory": "세션", "C": true, "S": true, "O": false}, {"id": "N2SF-SN-6", "name": "네트워크 연결", "category": "통제", "subcategory": "세션", "C": true, "S": true, "O": true}, {"id": "N2SF-SN-7", "name": "세션 중 행위 기반", "category": "통제", "subcategory": "세션", "C": true, "S": false, "O": false}, {"id": "N2SF-SN-8", "name": "세션 중 연속 인증", "category": "통제", "subcategory": "세션", "C": true, "S": true, "O": false}, {"id": "N2SF-SN-M1", "name": "세션 관리 정책", "category": "통제", "subcategory": "세션", "C": true, "S": true, "O": false}, {"id": "N2SF-SN-M2", "name": "세션 감사 및 로그", "category": "통제", "subcategory": "세션", "C": true, "S": true, "O": true}, {"id": "N2SF-WA-1", "name": "업무용 무선망", "category": "통제", "subcategory": "무선망접속", "C": true, "S": true, "O": true}, {"id": "N2SF-WA-2", "name": "업무용 무선망", "category": "통제", "subcategory": "무선망접속", "C": true, "S": true, "O": true}, {"id": "N2SF-WA-3", "name": "업무용 무선망", "category": "통제", "subcategory": "무선망접속", "C": true, "S": false, "O": false}, {"id": "N2SF-WA-4", "name": "비인가 무선장비", "category": "통제", "subcategory": "무선망접속", "C": true, "S": true, "O": true}, {"id": "N2SF-WA-5", "name": "외부인 전용", "category": "통제", "subcategory": "무선망접속", "C": true, "S": true, "O": false}, {"id": "N2SF-WA-6", "name": "무선망 관리기능", "category": "통제", "subcategory": "무선망접속", "C": true, "S": true, "O": true}, {"id": "N2SF-WA-7", "name": "비인가 무선망", "category": "통제", "subcategory": "무선망접속", "C": true, "S": true, "O": true}, {"id": "N2SF-WA-M1", "name": "무선망 세션/로그", "category": "통제", "subcategory": "무선망접속", "C": true, "S": true, "O": false}]};
+const MODELS_DATA = {"models": [{"number": 1, "name": "인터넷 단말의 업무 활용성 제고", "description": "기존 망 분리 환경에서 인터넷 단말에 문서편집기, 협업 소프트웨어, 클라우드 서비스를 설치하여 업무 활용성을 제고하는 모델. O등급 인터넷 영역의 협업 서비스 활용을 통해 생산성을 향상시킵니다.", "target_institutions": "국가·공공기관", "key_scenarios": ["협업 소프트웨어 활용", "클라우드 서비스 접근", "문서 편집 및 공유"], "cso_evaluation": {"subjects": ["인터넷 단말 (O등급)"], "objects": ["인터넷 협업 서비스 (O등급)"], "locations": ["기관 전산망 (O등급 영역)"]}, "key_threats": ["단말 OS 및 SW 취약점 노출", "비인가 SW 설치·실행", "단말 비인가 사용", "악성코드 유입", "외부로부터의 비인가 접근"], "key_security_controls": ["N2SF-MA-1", "N2SF-AC-1", "N2SF-AC-2", "N2SF-CM-1"], "security_principles_applied": ["정보 생산·저장", "정보 이동"], "network_architecture": "망 분리된 기관 전산망 O등급 영역의 인터넷 단말이 인터넷 서비스(클라우드, 협업 도구 등)에 직접 접속. 인터넷 연계체계를 통해 인가된 서비스만 접근"}, {"number": 2, "name": "업무환경에서 생성형 AI 활용", "description": "기관 전산망 내 업무 단말에서 상용 생성형 AI 서비스를 활용하여 업무 효율성을 향상시키는 모델. O등급 AI 서비스를 통해 문서 작성, 분석 등을 지원합니다.", "target_institutions": "국가·공공기관", "key_scenarios": ["생성형 AI 챗봇 활용", "문서 분석 및 요약", "이미지 생성"], "cso_evaluation": {"subjects": ["업무 단말 (S등급)", "온북 (S등급)"], "objects": ["생성형 AI 서비스 (O등급)"], "locations": ["기관 전산망 (S등급 영역)", "인터넷 (O등급)"]}, "key_threats": ["단말 OS 및 SW 취약점 노출", "비인가 SW 설치·실행", "업무정보 비인가 유출", "AI 서비스 계정 정보 노출", "S등급 업무정보의 O등급 서비스 전송"], "key_security_controls": ["N2SF-AC-1", "N2SF-AC-2", "N2SF-DLP-1", "N2SF-CM-1"], "security_principles_applied": ["정보 생산·저장", "정보 이동"], "network_architecture": "기관 전산망의 S등급 업무 단말이 AI 연계체계를 통해 인터넷의 O등급 생성형 AI 서비스에 접근. O등급 정보만 전송 가능"}, {"number": 3, "name": "외부 클라우드 활용 업무협업 체계", "description": "업무 생산성·효율성 제고를 위해 이용자 단말에서 외부 클라우드 협업도구(SaaS)를 사용하는 모델. 일정관리, 화상회의, 메신저, 자료공유 등 서비스를 활용합니다.", "target_institutions": "국가·공공기관", "key_scenarios": ["클라우드 협업 문서 작업", "화상회의", "일정 관리", "자료공유"], "cso_evaluation": {"subjects": ["이용자 단말: 업무 단말, 온북 (S등급)", "원격 단말, 모바일 단말 (O등급)"], "objects": ["외부 클라우드 협업 체계 (O등급)"], "locations": ["기관 전산망 (S등급)", "인터넷 (O등급)"]}, "key_threats": ["단말 OS 및 SW 취약점 노출", "비인가 SW 설치·실행", "S등급 업무정보의 비인가 전송", "외부로부터의 비인가 접근", "악성 콘텐츠 유입"], "key_security_controls": ["N2SF-AC-1", "N2SF-AC-2", "N2SF-DLP-1", "N2SF-CM-1", "N2SF-IM-1"], "security_principles_applied": ["정보 생산·저장", "정보 이동"], "network_architecture": "기관 전산망(S등급)의 단말과 인터넷(O등급)의 원격·모바일 단말이 SaaS 연계체계를 통해 클라우드 협업 서비스에 접속. O등급 정보만 처리"}, {"number": 4, "name": "업무 단말의 인터넷 이용", "description": "기관 전산망 내 이용자 단말에서 인터넷에 접속하여 업무 생산성·효율성을 제고하는 모델. O등급 업무정보만 인터넷 서비스를 활용할 수 있습니다.", "target_institutions": "국가·공공기관", "key_scenarios": ["업무 관련 웹 검색", "학습 자료 습득", "공개 정보 조회"], "cso_evaluation": {"subjects": ["업무 단말 (S등급)", "온북 (S등급)"], "objects": ["인터넷 서비스 (O등급)"], "locations": ["기관 전산망 (S등급 영역)"]}, "key_threats": ["단말 OS 및 SW 취약점 노출", "비인가 SW 설치·실행", "S등급 업무정보의 인터넷 전송", "유해 사이트 접근", "악성코드 감염"], "key_security_controls": ["N2SF-AC-1", "N2SF-AC-2", "N2SF-DLP-1", "N2SF-CM-1", "N2SF-IM-1"], "security_principles_applied": ["정보 생산·저장", "정보 이동"], "network_architecture": "기관 전산망의 S등급 업무 단말이 인터넷 연계체계를 통해 O등급 인터넷 서비스에 접근. S등급 정보는 인터넷으로 전송 금지"}, {"number": 5, "name": "공공 데이터의 외부 AI 융합", "description": "범정부 초거대 AI(PPP Zone의 S등급)와 인터넷망의 초거대 AI 서비스(O등급)를 융합하여 AI 모델 경량화, 파인튜닝, RAG 등을 수행하는 모델.", "target_institutions": "국가·공공기관", "key_scenarios": ["AI 모델 경량화", "파인튜닝", "검색 증강 생성(RAG)", "오토 브라우징"], "cso_evaluation": {"subjects": ["업무시스템 (S등급)", "범정부 초거대 AI (S등급)"], "objects": ["외부 AI 서비스 (O등급)", "MCP 서비스 (O등급)"], "locations": ["기관 전산망 (S등급)", "PPP Zone (S등급)", "인터넷 (O등급)"]}, "key_threats": ["업무시스템 접근 제어 미흡", "PPP Zone 연계체계 비인가 접근", "S등급 정보의 외부 AI 전송", "외부 AI 서비스의 보안 위협", "연계 구간 취약점"], "key_security_controls": ["N2SF-AC-1", "N2SF-AC-2", "N2SF-DLP-1", "N2SF-IM-1", "N2SF-CM-1"], "security_principles_applied": ["정보 생산·저장", "정보 이동"], "network_architecture": "기관 업무시스템(S등급)이 범정부 초거대 AI(S등급)와 연계. 범정부 초거대 AI가 인터넷 초거대 AI 및 MCP 서비스(O등급)와 연계하여 정보 처리"}, {"number": 6, "name": "연구 목적 단말의 신기술 활용", "description": "연구 목적의 업무환경에서 연구 단말 및 연구 시스템이 국내·외 제한없이 연구에 필요한 다양한 신기술을 활용하여 연구 생산성을 높이는 모델.", "target_institutions": "국가·공공기관(연구기관)", "key_scenarios": ["신기술 논문 검색", "국제 협력 플랫폼 활용", "연구 데이터 공유", "오픈소스 활용"], "cso_evaluation": {"subjects": ["연구 단말 (S등급)"], "objects": ["인터넷 신기술 서비스 (O등급)"], "locations": ["기관 전산망 (S등급 영역)"]}, "key_threats": ["단말 OS 및 SW 취약점", "S등급 연구 정보의 비인가 유출", "신기술 서비스 계정 정보 노출", "악성코드 감염", "비인가 네트워크 연결"], "key_security_controls": ["N2SF-AC-1", "N2SF-AC-2", "N2SF-DLP-1", "N2SF-CM-1"], "security_principles_applied": ["정보 생산·저장", "정보 이동"], "network_architecture": "기관 전산망 내 연구 단말이 연구용 연계체계를 통해 인터넷 신기술 서비스(O등급)에 접근. O등급 정보만 활용"}, {"number": 7, "name": "개발 환경 편의성 향상", "description": "개발 목적 업무환경에서 인터넷에 접속하여 개발에 필요한 오픈소스 등을 활용하고, 원격 개발을 지원하여 개발 환경의 편의성을 높이는 모델.", "target_institutions": "국가·공공기관(개발기관)", "key_scenarios": ["오픈소스 라이브러리 활용", "개발 문서 검색", "원격 개발", "버전 관리 시스템 활용"], "cso_evaluation": {"subjects": ["개발 단말 (S등급)", "원격 단말 (S등급)"], "objects": ["인터넷 서비스 (O등급)", "개발 시스템 (S등급)"], "locations": ["기관 전산망 (S등급)", "인터넷 (O등급)"]}, "key_threats": ["소스코드 비인가 유출", "개발 환경 설정 무결성 훼손", "악성코드 주입", "S등급 개발 정보의 인터넷 전송", "비인가 네트워크 연결"], "key_security_controls": ["N2SF-AC-1", "N2SF-AC-2", "N2SF-DLP-1", "N2SF-CM-1", "N2SF-IM-1"], "security_principles_applied": ["정보 생산·저장", "정보 이동"], "network_architecture": "기관 개발 시스템(S등급) 내 개발 단말이 인터넷 연계체계를 통해 오픈소스 및 개발 도구 접근. 원격지의 원격 단말이 원격개발 연계체계를 통해 개발 시스템에 접속"}, {"number": 8, "name": "클라우드 기반 통합문서체계", "description": "기관 내·외부에서 업무 단말, 모바일 단말, 원격 단말 등 단말 유형과 관계없이 통합문서체계를 활용하여 업무자료 생산·공유·협업을 수행하는 모델.", "target_institutions": "국가·공공기관", "key_scenarios": ["통합 문서 편집", "실시간 협업", "문서 버전 관리", "모바일 업무 문서 접근"], "cso_evaluation": {"subjects": ["업무 단말 (S등급)", "원격·모바일 단말 (O등급)"], "objects": ["통합문서체계 (S등급)"], "locations": ["기관 전산망 (S등급)", "인터넷 (O등급)"]}, "key_threats": ["통합문서체계 접근 제어 미흡", "S등급 업무 정보의 O등급 단말 전송", "외부로부터의 비인가 접근", "업무 정보 비인가 유출", "악성코드 감염"], "key_security_controls": ["N2SF-AC-1", "N2SF-AC-2", "N2SF-DLP-1", "N2SF-CM-1", "N2SF-IM-1"], "security_principles_applied": ["정보 생산·저장", "정보 이동"], "network_architecture": "기관 전산망(S등급)의 업무 단말과 인터넷(O등급)의 원격·모바일 단말이 통합문서 연계체계를 통해 클라우드 통합문서체계(S등급)에 접근. 정보 등급에 따라 차등화된 접근 통제"}, {"number": 9, "name": "모바일 업무환경 정보 연계", "description": "스마트폰, 태블릿 등 모바일 단말을 이용해 국가·공공기관 행정업무를 수행하는 모델. 내부행정(메일, 전자결재, 회계) 및 현장행정(현장확인, 민원)을 지원합니다.", "target_institutions": "국가·공공기관", "key_scenarios": ["모바일 메일 확인", "전자결재", "현장행정 업무", "민원 처리"], "cso_evaluation": {"subjects": ["모바일 단말 (O등급)"], "objects": ["모바일 업무 시스템 (S/O등급)"], "locations": ["기관 전산망 (S등급)", "인터넷 (O등급)"]}, "key_threats": ["모바일 단말 분실·도난", "비인가 앱 설치", "악성코드 감염", "S등급 정보의 비인가 유출", "비인가 앱을 통한 정보 접근"], "key_security_controls": ["N2SF-AC-1", "N2SF-AC-2", "N2SF-DLP-1", "N2SF-CM-1", "N2SF-IM-1", "N2SF-MD-1"], "security_principles_applied": ["정보 생산·저장", "정보 이동"], "network_architecture": "기관 외부의 모바일 단말이 이동통신망을 통해 모바일 업무환경 연계체계에 접속. 모바일 업무 시스템(S등급)과 모바일 공개 시스템(O등급) 분리 운영"}, {"number": 10, "name": "무선 업무환경 운용 체계", "description": "기관 청사 내에서 Wi-Fi 등 무선 통신을 활용하여 업무를 수행하는 모델. 이용자 단말이 무선 AP를 통해 기관 업무시스템에 접속합니다.", "target_institutions": "국가·공공기관", "key_scenarios": ["무선 인터넷 환경에서 업무", "회의실 무선 접속", "사무실 이동성 보장"], "cso_evaluation": {"subjects": ["업무 단말 (S등급)", "온북 (S등급)"], "objects": ["무선 AP (S등급)", "업무시스템 (S등급)"], "locations": ["기관 청사 (S등급)"]}, "key_threats": ["비인가 무선 AP 접속", "무선 통신 구간 도청", "무선 AP 비인가 접근", "단말 분실·도난", "네트워크 임의 변경"], "key_security_controls": ["N2SF-AC-1", "N2SF-AC-2", "N2SF-CM-1", "N2SF-IM-1", "N2SF-EP-1"], "security_principles_applied": ["정보 생산·저장", "정보 이동"], "network_architecture": "기관 청사 내 무선 AP가 기관 전산망에 연결되어 있고, 업무 단말이 무선 AP를 통해 업무시스템에 접속. 연계체계를 통한 인증 및 암호화 통신 필수"}, {"number": 11, "name": "정보 연계를 위한 CDS 구성", "description": "서로 다른 보안등급 또는 보안정책을 가진 두 개 이상의 영역에서 안전한 정보 교환을 지원하는 보안 통제시스템. Access/Transfer/MLS CDS 유형으로 구성됩니다.", "target_institutions": "국가·공공기관", "key_scenarios": ["업무망과 인터넷망 정보 연계", "외부 기관 정보 교환", "다중 등급 정보 처리"], "cso_evaluation": {"subjects": ["정보시스템 (S/O등급)"], "objects": ["CDS 시스템 (S등급)"], "locations": ["기관 전산망", "연계 네트워크"]}, "key_threats": ["CDS 비인가 접근", "정보 필터링 우회", "S등급 정보의 비인가 전송", "CDS 취약점 노출", "정보 무결성 훼손"], "key_security_controls": ["N2SF-AC-1", "N2SF-AC-2", "N2SF-DLP-1", "N2SF-CM-1", "N2SF-IM-1", "N2SF-AU-1"], "security_principles_applied": ["정보 생산·저장", "정보 이동"], "network_architecture": "Access CDS: 한 방향 정보 조회 제공. Transfer CDS: 양방향 정보 교환 지원. MLS CDS: 다중 보안등급 정보 동시 처리. 모든 CDS는 정보 검증, 필터링, 무해화, 추적 기능 포함"}]};
+const AI_DATA = {
+  "title": "국가·공공기관 AI보안 가이드북",
+  "overview": "이 가이드북은 국가정보원이 발표한 AI시스템의 안전한 도입과 활용을 위한 종합 보안 안내서입니다. 15개의 AI 보안위협과 30개의 보안대책을 제시하며, 구축유형별·활용유형별 보안실행 가이드를 포함합니다.",
+  "ai_security_principles": [
+    "Security by Design: AI시스템 개발계획 단계부터 보안 내재화",
+    "최소권한 원칙: AI에 필요한 최소한의 권한만 부여",
+    "다층방어(Defense in Depth): 계층적 또는 병렬적 보호장치 배치",
+    "투명성과 추적가능성: 로깅·모니터링을 통한 감시 및 감사추적",
+    "신뢰할 수 있는 출처: 데이터·모델·라이브러리는 신뢰할 수 있는 출처에서만 활용",
+    "인간-AI 협업: 민감한 결정에는 인간의 검토 및 승인 필수"
+  ],
+  "threats": [
+    {"id":"T01","name":"학습데이터 오염","desc":"공격자가 학습데이터를 악의적으로 변조·삽입하여 오염된 AI모델 생성","lifecycle":"데이터 수집·학습"},
+    {"id":"T02","name":"비인가 민감정보 학습","desc":"민감·기밀 정보가 사전 승인 없이 AI 학습에 사용되어 유출 위험","lifecycle":"데이터 수집·학습"},
+    {"id":"T03","name":"AI 백도어 삽입","desc":"특정 조건에서 오동작·정보유출 등 악성행위를 수행하는 백도어 삽입","lifecycle":"데이터 수집·학습"},
+    {"id":"T04","name":"학습데이터 추출","desc":"반복 질의 등으로 학습데이터를 추출하여 민감정보 재구성","lifecycle":"운영"},
+    {"id":"T05","name":"학습데이터 비인가자 접근","desc":"권한 미보유자에게 민감한 학습데이터가 노출","lifecycle":"운영"},
+    {"id":"T06","name":"AI모델 추출","desc":"반복 질의를 통해 AI모델의 구조·가중치를 추출하여 복제","lifecycle":"운영"},
+    {"id":"T07","name":"민감정보 입력·유출","desc":"사용자가 민감정보를 AI에 입력하여 외부로 유출","lifecycle":"운영"},
+    {"id":"T08","name":"프롬프트 인젝션","desc":"악의적 프롬프트로 AI 보안장치를 우회하여 잘못된 정보 표출","lifecycle":"운영"},
+    {"id":"T09","name":"회피 공격","desc":"적대적 입력으로 AI 분류·판별 기능을 우회","lifecycle":"운영"},
+    {"id":"T10","name":"통신구간 공격","desc":"AI시스템 통신구간에서 데이터 도청·변조","lifecycle":"운영"},
+    {"id":"T11","name":"서비스 거부 공격","desc":"과도한 요청으로 AI시스템 가용성 저하","lifecycle":"운영"},
+    {"id":"T12","name":"사고·이상행위 모니터링 체계 부재","desc":"AI 관련 사고 발생 시 탐지·대응 불가","lifecycle":"운영"},
+    {"id":"T13","name":"AI시스템 권한관리 부실","desc":"과도한 권한으로 인해 비인가 제어·수정 발생","lifecycle":"운영"},
+    {"id":"T14","name":"공급망 공격","desc":"AI 구성요소(모델·라이브러리)의 공급망을 통한 악성코드 유입","lifecycle":"구축"},
+    {"id":"T15","name":"용역업체 보안관리 부실","desc":"외주 개발·운영 과정에서 보안관리 미흡","lifecycle":"구축·운영"}
+  ],
+  "controls": [
+    {"id":"M01","name":"신뢰할 수 있는 출처의 데이터 활용","cat":"데이터 보안","threats":["T01"],"checklist":"AI모델 학습·재학습에 신뢰할 수 있는 출처의 데이터만 사용하였는가?"},
+    {"id":"M02","name":"신뢰할 수 있는 출처의 AI모델·라이브러리 활용","cat":"모델 보안","threats":["T14"],"checklist":"오픈소스 AI모델·라이브러리를 신뢰할 수 있는 출처에서 획득하여 사용하였는가?"},
+    {"id":"M03","name":"데이터 검사","cat":"데이터 보안","threats":["T01","T02"],"checklist":"수집한 데이터에 변조 또는 비인가 민감정보가 포함되어 있는지 검사하였는가?"},
+    {"id":"M04","name":"데이터 암호화","cat":"데이터 보안","threats":["T04","T05"],"checklist":"저장소에 보관된 원시·학습데이터를 암호화하였는가?"},
+    {"id":"M05","name":"데이터 접근통제","cat":"데이터 보안","threats":["T05"],"checklist":"데이터 저장소에 대한 사용자·데이터·접근경로별 권한을 부여하고 접근제어를 하고 있는가?"},
+    {"id":"M06","name":"민감정보 사용 사전 승인","cat":"데이터 보안","threats":["T02","T07"],"checklist":"민감·비공개 정보를 AI시스템에 포함시킬 경우 사전 보고 및 승인을 받았는가?"},
+    {"id":"M07","name":"보안등급에 맞는 학습데이터 구성·활용","cat":"데이터 보안","threats":["T02","T05","T07"],"checklist":"AI시스템 활용 목적 및 등급에 맞게 C/S/O 등급의 데이터를 분류하여 사용하였는가?"},
+    {"id":"M08","name":"데이터 로깅·모니터링","cat":"데이터 보안","threats":["T04","T05"],"checklist":"원시·학습데이터에 대한 접근·변경 등 행위에 대해 로그를 기록하고 분석하고 있는가?"},
+    {"id":"M09","name":"AI시스템 로깅·모니터링","cat":"운영 보안","threats":["T12","T13"],"checklist":"AI시스템 운영 중 발생하는 입·출력 행위를 모니터링하고 있는가?"},
+    {"id":"M10","name":"데이터 수집 명세서 관리","cat":"데이터 보안","threats":["T01","T02"],"checklist":"학습에 사용되는 데이터의 출처·항목·수집방법 등을 문서화하여 관리하고 있는가?"},
+    {"id":"M11","name":"AI시스템 구성요소 명세서 관리","cat":"모델 보안","threats":["T14"],"checklist":"AI시스템의 모든 구성요소(모델·라이브러리 등)를 문서화하여 관리하고 있는가?"},
+    {"id":"M12","name":"AI시스템 구성요소 무결성 검증","cat":"모델 보안","threats":["T03","T14"],"checklist":"AI시스템 구성요소에 대해 정기적으로 무결성을 검증하고 있는가?"},
+    {"id":"M13","name":"입·출력 필터링","cat":"운영 보안","threats":["T07","T08"],"checklist":"AI시스템의 입·출력에 대해 민감정보·유해정보 필터링을 수행하고 있는가?"},
+    {"id":"M14","name":"입력 길이·형식 제한","cat":"운영 보안","threats":["T08","T11"],"checklist":"AI시스템에 입력 가능한 길이와 형식을 제한하고 있는가?"},
+    {"id":"M15","name":"가드레일 다중화","cat":"운영 보안","threats":["T08"],"checklist":"프롬프트 인젝션 등을 방지하기 위해 다중 가드레일을 구성하였는가?"},
+    {"id":"M16","name":"AI모델 구조·가중치 유출 방지","cat":"모델 보안","threats":["T06"],"checklist":"AI모델의 구조와 가중치가 외부에 유출되지 않도록 보호하고 있는가?"},
+    {"id":"M17","name":"AI시스템 경계보안 강화","cat":"운영 보안","threats":["T10","T11"],"checklist":"AI시스템과 외부망 간 경계보안(방화벽, DMZ 등)을 강화하였는가?"},
+    {"id":"M18","name":"AI시스템 통신구간 보호","cat":"운영 보안","threats":["T10"],"checklist":"AI시스템 내·외부 통신구간에 암호화 등 보안조치를 적용하였는가?"},
+    {"id":"M19","name":"과도한 권한 부여 제한","cat":"권한 및 제어","threats":["T13"],"checklist":"AI시스템에 필요 최소한의 권한만 부여하고 있는가?"},
+    {"id":"M20","name":"민감 명령 승인 절차 마련","cat":"권한 및 제어","threats":["T13"],"checklist":"민감한 명령 수행 전 담당자의 검토와 승인 절차를 마련하였는가?"},
+    {"id":"M21","name":"비상대응 체계 마련","cat":"권한 및 제어","threats":["T12","T13"],"checklist":"AI시스템 관련 보안사고 발생 시 비상대응 절차를 마련하였는가?"},
+    {"id":"M22","name":"설명 가능한 AI 구성","cat":"평가 및 개선","threats":["T12"],"checklist":"AI의 추론·결정 과정을 담당자가 인지 가능한 형태로 제공하고 있는가?"},
+    {"id":"M23","name":"AI모델 대상 적대적 모의공격 수행","cat":"평가 및 개선","threats":["T03","T08","T09"],"checklist":"AI모델에 대해 정기적으로 적대적 모의공격을 수행하고 있는가?"},
+    {"id":"M24","name":"AI모델에 적대적 공격유형 학습","cat":"평가 및 개선","threats":["T09"],"checklist":"적대적 공격유형을 AI모델에 학습시켜 보안성을 강화하고 있는가?"},
+    {"id":"M25","name":"AI시스템 구성요소 취약점 점검 및 보안업데이트","cat":"평가 및 개선","threats":["T14"],"checklist":"AI시스템 구성요소에 대해 정기적으로 취약점 점검 및 보안업데이트를 수행하고 있는가?"},
+    {"id":"M26","name":"AI모델 복구","cat":"모델 보안","threats":["T01","T03"],"checklist":"AI모델 손상·오염 시 복구할 수 있는 백업 체계를 마련하였는가?"},
+    {"id":"M27","name":"요청 속도 제한","cat":"운영 보안","threats":["T04","T06","T11"],"checklist":"과도한 질의를 방지하기 위해 요청 속도를 제한하고 있는가?"},
+    {"id":"M28","name":"AI시스템 구성요소 완전 삭제","cat":"데이터 보안","threats":["T04","T05"],"checklist":"폐기 시 학습데이터·모델 등을 완전히 삭제하고 있는가?"},
+    {"id":"M29","name":"용역업체 보안관리","cat":"관리 보안","threats":["T15"],"checklist":"용역업체의 보안관리 체계를 점검하고 보안요구사항을 계약에 포함하고 있는가?"},
+    {"id":"M30","name":"사용자 교육 및 보안정책 수립","cat":"관리 보안","threats":["T07","T15"],"checklist":"사용자 대상 AI 보안 교육 및 보안정책을 수립·시행하고 있는가?"}
+  ],
+  "buildTypes": [
+    {
+      "id":"bt1","name":"내부망 전용 AI시스템","icon":"🔒",
+      "desc":"기관의 핵심데이터를 외부 접근으로부터 차단한 상태에서 AI를 활용하는 유형",
+      "examples":["스마트 인재관리: 인사정보를 AI로 분석, 보직별 적합 인재 추천","AI 정수장: AI로 수질·온도 분석, 약품주입·여과 등 정수 공정 제어","스마트교차로: AI로 교차로 교통영상 분석, 교통신호 최적화"],
+      "keyPoints":["외부망과 연계되지 않아 상대적으로 높은 보안성","비공개 업무자료 취급 및 내부업무 지원 목적","주요 업무시스템·데이터와 연계·활용"],
+      "keyThreats":["T05 학습데이터 비인가자 접근","T13 AI시스템 권한관리 부실"],
+      "keyControls":["M07 보안등급에 맞는 학습데이터 구성·활용","M09 AI시스템 로깅·모니터링","M17 AI시스템 경계보안 강화","M19 과도한 권한 부여 제한","M20 민감 명령 승인 절차 마련","M21 비상대응 체계 마련"],
+      "n2sfGrade":"S (민감) 이상","n2sfModel":"모델2(생성형AI), 모델5(AI융합)"
+    },
+    {
+      "id":"bt2","name":"내부업무용 AI시스템의 외부망 연계","icon":"🔄",
+      "desc":"내부 AI시스템에 최신 데이터를 학습하거나 기능 확장을 위해 외부망과 연계하는 유형",
+      "examples":["AI 신고접수시스템: 신고자 음성→문자 변환, 유사 질의 추천","서류 위변조 검증시스템: 접수된 외부 문건의 위변조 검증","웹 활용 AI 검색 서비스: 내부 AI가 웹 최신정보 검색"],
+      "keyPoints":["외부 자료를 수집하여 학습에 활용","내부 AI시스템 생성 결과물을 외부 전송","내·외부망 연계구간을 통한 외부접점 발생"],
+      "keyThreats":["T01 학습데이터 오염","T03 AI 백도어 삽입","T14 공급망 공격"],
+      "keyControls":["M01 신뢰할 수 있는 출처의 데이터 활용","M03 데이터 검사","M07 보안등급에 맞는 학습데이터 구성·활용","M12 AI시스템 구성요소 무결성 검증","M17 AI시스템 경계보안 강화"],
+      "n2sfGrade":"S (민감) / O (공개)","n2sfModel":"모델4(인터넷이용), 모델11(CDS)"
+    },
+    {
+      "id":"bt3","name":"대민서비스용 AI시스템의 내부망 연계","icon":"🌐",
+      "desc":"외부망에 AI시스템을 구축하고 기관 내부망과 연계하여 대민서비스를 제공하는 유형",
+      "examples":["기관 특화 정보검색 챗봇: 수자원·기상정보 등 대민 제공","병해충 발생 예측: 데이터 분석으로 병해충 발생시기 예측","AI기반 민원안내 서비스: 챗봇으로 생활정보 제공, 시설 예약"],
+      "keyPoints":["불특정 다수가 AI시스템에 접근 가능","외부망에서 프롬프트 인젝션 등 공격 가능","내부 데이터가 외부로 전송될 위험"],
+      "keyThreats":["T07 민감정보 입력·유출","T08 프롬프트 인젝션","T11 서비스 거부 공격"],
+      "keyControls":["M07 보안등급에 맞는 학습데이터 구성·활용","M13 입·출력 필터링","M14 입력 길이·형식 제한","M17 AI시스템 경계보안 강화","M24 AI모델에 적대적 공격유형 학습","M27 요청 속도 제한"],
+      "n2sfGrade":"O (공개)","n2sfModel":"모델1(인터넷단말), 모델3(클라우드협업)"
+    },
+    {
+      "id":"bt4","name":"상용 AI서비스 활용","icon":"☁️",
+      "desc":"챗GPT 등 외부 상용 AI서비스를 기관에서 활용하거나, API를 연동하여 시스템을 구축하는 유형",
+      "examples":["공공기관 AI 비서: 상용 AI로 문서초안 작성, 번역 등 활용","홈페이지 AI 챗봇: 상용 AI로 기관 정보검색 지원"],
+      "keyPoints":["상용 AI에 기관 내부정보 입력 위험","내·외부망 접점 발생","상용 AI서비스 계정·보안관리 필요"],
+      "keyThreats":["T07 민감정보 입력·유출","T10 통신구간 공격"],
+      "keyControls":["M07 보안등급에 맞는 학습데이터 구성·활용","M09 AI시스템 로깅·모니터링","M13 입·출력 필터링","M14 입력 길이·형식 제한","M17 AI시스템 경계보안 강화","M30 사용자 교육 및 보안정책 수립"],
+      "n2sfGrade":"O (공개)","n2sfModel":"모델2(생성형AI), 모델3(클라우드협업)"
+    }
+  ],
+  "useTypes": [
+    {
+      "id":"ut1","name":"에이전틱 AI","icon":"🤖",
+      "desc":"다수 AI 에이전트가 상호 작용하며 계획수립, 외부 정보 기억, 도구 호출 등을 자율적으로 수행하는 AI",
+      "threats": [
+        {"id":"A01","name":"학습데이터 오염","desc":"AI가 활용하는 학습데이터에 백도어 삽입 또는 데이터 오염"},
+        {"id":"A02","name":"AI 메모리 오염","desc":"단기·장기 메모리에 오동작 유도 정보를 삽입"},
+        {"id":"A03","name":"잘못된 도구 사용","desc":"오염·변조된 도구 사용 유도 또는 도구를 통한 악성행위"},
+        {"id":"A04","name":"AI의 무단 권한 침해","desc":"권한관리 취약점을 악용하여 승인되지 않은 작업 수행"},
+        {"id":"A05","name":"자원 과부하","desc":"메모리 등 시스템 자원을 고의로 소진하여 과부하 유발"},
+        {"id":"A06","name":"AI의 목표 조작","desc":"잘못된 계획 수립 또는 공격자가 주입한 목표로 행동 유도"},
+        {"id":"A07","name":"AI의 잘못된 행동 수행","desc":"보안정책 우회, 금지된 행동을 스스로 판단하여 수행"},
+        {"id":"A08","name":"사고·이상행위 탐지 불가","desc":"로그·모니터링 부족으로 사고 추적 및 책임규명 한계"},
+        {"id":"A09","name":"과도한 인간 개입 유발","desc":"빈번한 승인 요청으로 업무방해 및 습관적 승인 유도"},
+        {"id":"A10","name":"에이전트 간 통신 공격","desc":"에이전트 간 통신에 허위정보 주입 또는 악성 에이전트 침투"},
+        {"id":"A11","name":"구성요소 취약점","desc":"MCP 서버 등 구성요소 취약점으로 민감정보 유출"}
+      ],
+      "controls": [
+        {"id":"A-M01","name":"데이터 검사"},
+        {"id":"A-M02","name":"메모리 검사"},
+        {"id":"A-M03","name":"입·출력 필터링"},
+        {"id":"A-M04","name":"화이트리스트 기반 도구 사용"},
+        {"id":"A-M05","name":"에이전틱 AI 로깅·모니터링"},
+        {"id":"A-M06","name":"미승인 에이전트 권한 위임 차단"},
+        {"id":"A-M07","name":"AI 에이전트 자동 중단"},
+        {"id":"A-M08","name":"에이전트 간 악성행위 전파 차단"},
+        {"id":"A-M09","name":"AI 에이전트 목표 검증"},
+        {"id":"A-M10","name":"입·출력 결과 검증"},
+        {"id":"A-M11","name":"과도한 권한 부여 제한"},
+        {"id":"A-M12","name":"민감 명령 승인 절차 마련"},
+        {"id":"A-M13","name":"민감 명령 승인 요청 임계값 설정"},
+        {"id":"A-M14","name":"설명 가능한 AI 구성"},
+        {"id":"A-M15","name":"AI 에이전트 신원 확인"},
+        {"id":"A-M16","name":"에이전틱 AI 통신구간 보호"},
+        {"id":"A-M17","name":"에이전틱 AI 구성요소 취약점 점검"}
+      ]
+    },
+    {
+      "id":"ut2","name":"피지컬 AI","icon":"⚙️",
+      "desc":"로봇·드론 등 물리적 장치를 제어하여 실제 환경에서 직접적인 행동을 수행하는 AI",
+      "threats": [
+        {"id":"P01","name":"AI 백도어 삽입, 오동작","desc":"특정 조건에서 잘못된 의사결정 또는 구동기 오동작 유도"},
+        {"id":"P02","name":"자원 과부하","desc":"과도한 연산으로 배터리 소모·발열 및 제어 지연"},
+        {"id":"P03","name":"회피 공격","desc":"악의적 패턴으로 센서 인식을 방해하거나 잘못 인식 유도"},
+        {"id":"P04","name":"센서정보 전처리 공격","desc":"센서정보 전처리 과정에 오동작 유발 정보 주입"},
+        {"id":"P05","name":"물리적 안전 위협","desc":"외부 공격으로 예측 불가능한 동작, 인명피해·시설파괴 위험"}
+      ],
+      "controls": [
+        {"id":"P-M01","name":"데이터 검사"},
+        {"id":"P-M02","name":"AI모델 대상 적대적 모의공격 수행"},
+        {"id":"P-M03","name":"AI모델에 적대적 공격유형 학습"},
+        {"id":"P-M04","name":"과도한 권한 부여 제한"},
+        {"id":"P-M05","name":"안전모드 동작"},
+        {"id":"P-M06","name":"하드웨어 보안성 강화"},
+        {"id":"P-M07","name":"센서 입력 범위 설정"},
+        {"id":"P-M08","name":"피지컬 AI 통신구간 보호"},
+        {"id":"P-M09","name":"피지컬 AI 로깅·모니터링"},
+        {"id":"P-M10","name":"비상대응 체계 마련"}
+      ]
+    }
+  ],
+  "n2sfMapping": {
+    "desc": "AI보안 가이드북의 보안대책은 N2SF 보안통제 항목과 상호 보완적으로 적용됩니다. AI시스템도 N2SF의 C/S/O 등급분류 대상이며, AI 구축·활용 시 N2SF 적용절차(준비→등급분류→위협식별→보안대책수립→적절성평가)를 함께 수행해야 합니다.",
+    "mappings": [
+      {"ai":"M05 데이터 접근통제","n2sf":"N2SF 권한 영역 (AC계열)","relation":"AI 학습데이터 접근통제 ↔ N2SF 계정·접근권한 관리"},
+      {"ai":"M09 AI시스템 로깅·모니터링","n2sf":"N2SF 통제 영역 (AU계열)","relation":"AI 운영 모니터링 ↔ N2SF 감사·모니터링"},
+      {"ai":"M13 입·출력 필터링","n2sf":"N2SF 데이터 영역 (DT계열)","relation":"AI 입출력 필터링 ↔ N2SF 데이터 유출방지"},
+      {"ai":"M17 AI시스템 경계보안 강화","n2sf":"N2SF 분리및격리 영역 (IF계열)","relation":"AI 경계보안 ↔ N2SF 네트워크 분리·격리"},
+      {"ai":"M19 과도한 권한 부여 제한","n2sf":"N2SF 권한 영역 (AC계열)","relation":"AI 최소권한 ↔ N2SF 권한 최소화"},
+      {"ai":"M18 AI시스템 통신구간 보호","n2sf":"N2SF 인증 영역 (MA계열)","relation":"AI 통신보안 ↔ N2SF 통신·인증 보안"},
+      {"ai":"M25 구성요소 취약점 점검","n2sf":"N2SF 정보자산 영역 (DV계열)","relation":"AI 취약점관리 ↔ N2SF 정보자산 취약점 관리"}
+    ]
+  }
+};
+
+// === WIZARD STATE ===
+
+// === NEW WIZARD STATE ===
+const wizardState = {
+  currentStep: 1,
+  completed: [false,false,false,false,false],
+  // Step 1: bundles of business info
+  orgName: '',
+  projectName: '',
+  responsible: '',
+  brmDone: '',
+  bundles: [], // [{bizInfo, system, scenario, secGoal, models:[]}]
+  // Step 2: C/S/O per item
+  bizGrades: {},   // {bizInfo: {grade:'S', reason:''}}
+  sysGrades: {},   // {system: {grade:'S', bizInfos:''}}
+  locGrades: [],   // [{location, grade}]
+  multiGradePolicy: '',
+  // Step 3: threat scenarios
+  scenarioThreats: [], // [{scenario, location, locGrade, subject, subGrade, object, objGrade, gradeDiff, productionResult, productionControl, movementResult, movementControl, additionalThreats}]
+  // Step 4: security measures
+  derivedRequirements: [], // auto-populated
+  derivedControls: [],     // auto-populated [{id, name, category, required, implemented, implPlan}]
+  additionalControls: '',
+  // Step 5: assessment
+  assessments: {}
+};
+
+// === THREAT AUTO-DERIVE RULES ===
+const GRADE_ORDER = {C:3, S:2, O:1};
+function hasGradeDiff(g1, g2) { return g1 !== g2; }
+function higherGrade(g1, g2) { return (GRADE_ORDER[g1]||0) >= (GRADE_ORDER[g2]||0) ? g1 : g2; }
+
+function autoProductionStorage(locGrade, objGrade) {
+  if(!locGrade || !objGrade) return {result:'', auto: false};
+  if(GRADE_ORDER[objGrade] > GRADE_ORDER[locGrade]) {
+    return {result: objGrade+'등급 정보가 '+locGrade+'등급 위치에서 생산·저장 → 등급 상향 또는 위치 변경 필요', auto:true};
+  }
+  if(locGrade === objGrade) {
+    return {result: '동일 등급('+locGrade+') — 정보 생산·저장 허용', auto:true};
+  }
+  return {result: locGrade+'등급 위치에서 '+objGrade+'등급 정보 생산 — 허용(하향)', auto:true};
+}
+
+function autoMovement(subGrade, objGrade) {
+  if(!subGrade || !objGrade) return {result:'', auto:false};
+  if(subGrade === objGrade) return {result:'동일 등급('+subGrade+') 간 이동 — 허용', auto:true};
+  const from = subGrade, to = objGrade;
+  if(GRADE_ORDER[from] > GRADE_ORDER[to]) {
+    return {result: from+'→'+to+' 하향 이동 — 필터링·통제 필요 (정보이동 원칙 위반 가능)', auto:true};
+  }
+  return {result: from+'→'+to+' 상향 이동 — 허용 (단, 저장 시 상위등급 정책 적용)', auto:true};
+}
+
+// Map threat patterns to N2SF control categories
+function deriveControlsForThreats(scenarioThreats, grade) {
+  const controlIds = new Set();
+  const requirements = [];
+  
+  scenarioThreats.forEach(st => {
+    if(st.gradeDiff === '있음' || hasGradeDiff(st.subGrade, st.objGrade)) {
+      requirements.push({threat: st.scenario+': 등급 차이('+st.subGrade+'↔'+st.objGrade+')', req: '등급 간 정보 이동 통제, 필터링 적용'});
+      // Add relevant controls
+      CONTROLS_DATA.controls.forEach(c => {
+        if(c.category === '분리 및 격리' && c[grade]) controlIds.add(c.id);
+        if(c.category === '통제' && c.subcategory && c.subcategory.includes('연계') && c[grade]) controlIds.add(c.id);
+      });
+    }
+    if(st.productionResult && st.productionResult.includes('필요')) {
+      requirements.push({threat: st.scenario+': 정보생산·저장 원칙 위반', req: '등급에 맞는 위치에서만 정보 생산·저장'});
+      CONTROLS_DATA.controls.forEach(c => {
+        if(c.category === '데이터' && c[grade]) controlIds.add(c.id);
+      });
+    }
+    if(st.movementResult && st.movementResult.includes('필터링')) {
+      requirements.push({threat: st.scenario+': 정보이동 시 필터링 필요', req: '정보 이동 구간 필터링, DLP 적용'});
+      CONTROLS_DATA.controls.forEach(c => {
+        if((c.category === '통제' || c.category === '데이터') && c[grade]) controlIds.add(c.id);
+      });
+    }
+    if(st.additionalThreats) {
+      requirements.push({threat: st.scenario+': '+st.additionalThreats, req: '추가 위협에 대한 보안통제 적용'});
+    }
+  });
+  
+  // Always add baseline controls for the grade
+  CONTROLS_DATA.controls.forEach(c => {
+    if(c.category === '권한' && c[grade]) controlIds.add(c.id);
+    if(c.category === '인증' && c[grade]) controlIds.add(c.id);
+  });
+  
+  const controls = CONTROLS_DATA.controls.filter(c => controlIds.has(c.id)).map(c => ({
+    id: c.id, name: c.name, category: c.category, subcategory: c.subcategory,
+    required: true, implemented: null, implPlan: ''
+  }));
+  
+  return {requirements, controls};
+}
+
+// === WIZARD STEPS (new structure) ===
+const WIZARD_STEPS = {
+  1: { title: "1절 준비 (Prepare)", description: "기관의 업무정보 및 정보서비스 현황을 식별하고 N2SF 적용 계획을 수립합니다." },
+  2: { title: "2절 C/S/O 등급분류 (Categorize)", description: "식별된 업무정보, 정보시스템, 위치(영역)에 대해 C/S/O 등급을 분류합니다." },
+  3: { title: "3절 위협식별 (Identify)", description: "사용 시나리오별 위치-주체-객체 모델링으로 보안위협을 식별합니다." },
+  4: { title: "4절 보안대책 수립 (Select)", description: "식별된 위협에 대한 보안 요구사항과 보안통제 항목을 자동 도출합니다." },
+  5: { title: "5절 적절성 평가·조정 (Assess)", description: "전체 단계의 수행결과를 평가하고 미흡한 점을 보완합니다." }
+};
+
+const MODEL_OPTIONS = [
+  "모델1: 인터넷 단말의 업무 활용성 제고","모델2: 업무환경에서 생성형 AI 활용",
+  "모델3: 외부 클라우드 활용 업무협업 체계","모델4: 업무 단말의 인터넷 이용",
+  "모델5: 공공 데이터의 외부 AI 융합","모델6: 연구 목적 단말의 신기술 활용",
+  "모델7: 개발 환경 편의성 향상","모델8: 클라우드 기반 통합문서체계",
+  "모델9: 모바일 업무환경 정보 연계","모델10: 무선 업무환경 운용 체계",
+  "모델11: 정보 연계를 위한 CDS 구성","해당 모델 없음 (자체 정의)"
+];
+
+// === RENDER WIZARD ===
+function renderWizardStep() {
+  const s = wizardState.currentStep;
+  const info = WIZARD_STEPS[s];
+  if(!info) return;
+  let h = '<div class="card"><h3 style="font-size:1.3rem;margin-bottom:4px;">'+info.title+'</h3><p style="margin-bottom:10px;color:var(--text-light);">'+info.description+'</p></div>';
+
+  if(s===1) h += renderStep1();
+  else if(s===2) h += renderStep2();
+  else if(s===3) h += renderStep3();
+  else if(s===4) h += renderStep4();
+  else if(s===5) h += renderStep5();
+
+  h += '<div class="btn-group" style="margin-top:20px;">';
+  if(s>1) h += '<button class="btn btn-outline" onclick="goToStep('+(s-1)+')">&larr; 이전 단계</button>';
+  h += '<button class="btn btn-success" onclick="completeStep('+s+')">이 단계 완료 &#10003;</button>';
+  if(s<5) h += '<button class="btn btn-primary" onclick="goToStep('+(s+1)+')">다음 단계 &rarr;</button>';
+  if(s===5) h += '<button class="btn btn-primary" onclick="showSection(\'output\');generateOutput()">산출물 생성 &rarr;</button>';
+  h += '</div>';
+
+  document.getElementById('wizardContent').innerHTML = h;
+  updateStepNav();
+}
+
+// ===== STEP 1: 준비 =====
+function renderStep1() {
+  const ws = wizardState;
+  let h = '';
+  // Basic info
+  h += '<div class="question-card"><h3><span class="q-num">1</span>기관명 / 정보화사업명</h3>';
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">';
+  h += '<input type="text" placeholder="기관명" value="'+escHtml(ws.orgName)+'" onchange="wizardState.orgName=this.value">';
+  h += '<input type="text" placeholder="정보화사업명" value="'+escHtml(ws.projectName)+'" onchange="wizardState.projectName=this.value">';
+  h += '</div></div>';
+
+  h += '<div class="question-card"><h3><span class="q-num">2</span>적절성 평가·조정 단계 책임자 (정보보안담당관)</h3>';
+  h += '<input type="text" placeholder="예: 정보보안담당관 홍길동" value="'+escHtml(ws.responsible)+'" onchange="wizardState.responsible=this.value"></div>';
+
+  h += '<div class="question-card"><h3><span class="q-num">3</span>BRM(기능분류체계) 연계 분석 여부</h3>';
+  h += '<div class="option-group">';
+  ["예, BRM 레벨5 이하로 세분화","예, BRM 레벨4까지 분석","자체 분류체계 사용","아직 분석 전"].forEach(opt => {
+    const ck = ws.brmDone===opt?'checked':'';
+    h += '<label><input type="radio" name="brm" value="'+escHtml(opt)+'" '+ck+' onchange="wizardState.brmDone=this.value"><span>'+opt+'</span></label>';
+  });
+  h += '</div></div>';
+
+  // Bundles
+  h += '<div class="question-card" style="border-left:4px solid var(--primary);">';
+  h += '<h3><span class="q-num">4</span>업무정보 · 정보시스템 · 시나리오 · 보안목표 · 참조모델 (한 묶음씩 등록)</h3>';
+  h += '<p style="color:var(--text-light);font-size:0.85rem;margin-bottom:12px;">정보화사업 범위 내 식별된 각 업무정보를 묶음(번들)으로 등록합니다. 하나의 묶음에는 업무정보, 취급 정보시스템, 주요 사용 시나리오, 보안목표, 참조 모델이 포함됩니다.</p>';
+
+  ws.bundles.forEach((b, idx) => {
+    h += '<div class="bundle-card" style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px;position:relative;">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><strong style="color:var(--primary);">묶음 #'+(idx+1)+'</strong>';
+    h += '<button class="btn btn-outline" style="padding:4px 10px;font-size:0.8rem;color:#e53e3e;border-color:#e53e3e;" onclick="removeBundle('+idx+')">삭제</button></div>';
+    
+    h += '<div style="display:grid;gap:10px;">';
+    h += '<div><label style="font-weight:600;font-size:0.85rem;display:block;margin-bottom:4px;">업무정보</label>';
+    h += '<input type="text" placeholder="예: 연구 보고서, 인터넷 수집자료" value="'+escHtml(b.bizInfo)+'" onchange="wizardState.bundles['+idx+'].bizInfo=this.value"></div>';
+    
+    h += '<div><label style="font-weight:600;font-size:0.85rem;display:block;margin-bottom:4px;">취급 정보시스템</label>';
+    h += '<input type="text" placeholder="예: 연구 서버, 업무 단말" value="'+escHtml(b.system)+'" onchange="wizardState.bundles['+idx+'].system=this.value"></div>';
+    
+    h += '<div><label style="font-weight:600;font-size:0.85rem;display:block;margin-bottom:4px;">주요 사용 시나리오</label>';
+    h += '<textarea placeholder="예: 업무단말에서 생성형 AI로 문서 요약" onchange="wizardState.bundles['+idx+'].scenario=this.value" style="min-height:60px;">'+escHtml(b.scenario)+'</textarea></div>';
+    
+    h += '<div><label style="font-weight:600;font-size:0.85rem;display:block;margin-bottom:4px;">보안목표 (기초 보안 요구사항)</label>';
+    h += '<textarea placeholder="예: S등급 이상 정보의 외부 전송 차단" onchange="wizardState.bundles['+idx+'].secGoal=this.value" style="min-height:60px;">'+escHtml(b.secGoal)+'</textarea></div>';
+
+    h += '<div><label style="font-weight:600;font-size:0.85rem;display:block;margin-bottom:4px;">참조 정보서비스 모델</label>';
+    h += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+    MODEL_OPTIONS.forEach(m => {
+      const ck = (b.models||[]).includes(m)?'checked':'';
+      h += '<label style="font-size:0.8rem;display:inline-flex;align-items:center;gap:4px;background:white;padding:4px 8px;border-radius:6px;border:1px solid #e2e8f0;"><input type="checkbox" value="'+escHtml(m)+'" '+ck+' onchange="toggleBundleModel('+idx+',this)">'+m.split(':')[0]+'</label>';
+    });
+    h += '</div></div>';
+    h += '</div></div>';
+  });
+
+  h += '<button class="btn btn-primary" onclick="addBundle()" style="width:100%;margin-top:8px;">+ 업무정보 묶음 추가</button>';
+  h += '</div>';
+  return h;
+}
+
+function addBundle() {
+  wizardState.bundles.push({bizInfo:'', system:'', scenario:'', secGoal:'', models:[]});
+  renderWizardStep();
+}
+function removeBundle(idx) {
+  wizardState.bundles.splice(idx, 1);
+  renderWizardStep();
+}
+function toggleBundleModel(idx, el) {
+  const b = wizardState.bundles[idx];
+  if(!b.models) b.models = [];
+  if(el.checked) { if(!b.models.includes(el.value)) b.models.push(el.value); }
+  else { b.models = b.models.filter(m => m !== el.value); }
+}
+
+// ===== STEP 2: 등급분류 =====
+function renderStep2() {
+  const ws = wizardState;
+  let h = '';
+  
+  // Collect unique bizInfos and systems from bundles
+  const bizInfos = [...new Set(ws.bundles.map(b=>b.bizInfo).filter(x=>x))];
+  const systems = [...new Set(ws.bundles.map(b=>b.system).filter(x=>x))];
+  
+  if(bizInfos.length === 0 && systems.length === 0) {
+    h += '<div class="card" style="background:#fffbeb;border-left:4px solid #d69e2e;"><p>⚠ 1절(준비)에서 업무정보와 정보시스템을 먼저 등록하세요.</p></div>';
+    return h;
+  }
+
+  // 업무정보별 C/S/O
+  h += '<div class="question-card" style="border-left:4px solid #805ad5;">';
+  h += '<h3><span class="q-num">1</span>업무정보별 C/S/O 등급분류</h3>';
+  h += '<p style="color:var(--text-light);font-size:0.85rem;margin-bottom:12px;">각 업무정보에 대해 등급과 분류 근거를 입력하세요.</p>';
+  h += '<table class="ctrl-table"><thead><tr><th>업무정보</th><th style="width:120px;">등급</th><th>분류 근거</th></tr></thead><tbody>';
+  bizInfos.forEach(bi => {
+    const g = ws.bizGrades[bi] || {grade:'', reason:''};
+    h += '<tr><td><strong>'+escHtml(bi)+'</strong></td>';
+    h += '<td><select onchange="setBizGrade(\''+escHtml(bi)+'\',\'grade\',this.value)" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;">';
+    h += '<option value="">선택</option>';
+    ['C (기밀)','S (민감)','O (공개)'].forEach(opt => {
+      const val = opt.charAt(0);
+      h += '<option value="'+val+'" '+(g.grade===val?'selected':'')+'>'+opt+'</option>';
+    });
+    h += '</select></td>';
+    h += '<td><input type="text" placeholder="예: 정보공개법 제9조 제1항 제2호" value="'+escHtml(g.reason)+'" onchange="setBizGrade(\''+escHtml(bi)+'\',\'reason\',this.value)"></td></tr>';
+  });
+  h += '</tbody></table></div>';
+
+  // 정보시스템별 C/S/O
+  h += '<div class="question-card" style="border-left:4px solid #3182ce;">';
+  h += '<h3><span class="q-num">2</span>정보시스템별 C/S/O 등급분류</h3>';
+  h += '<p style="color:var(--text-light);font-size:0.85rem;margin-bottom:12px;">정보시스템이 취급하는 업무정보 중 최상위 등급이 시스템 등급이 됩니다.</p>';
+  h += '<table class="ctrl-table"><thead><tr><th>정보시스템</th><th style="width:120px;">등급</th><th>포함 업무정보(등급)</th></tr></thead><tbody>';
+  systems.forEach(sys => {
+    const g = ws.sysGrades[sys] || {grade:'', bizInfos:''};
+    // Auto-suggest grade from bundled bizInfo grades
+    const relBiz = ws.bundles.filter(b=>b.system===sys).map(b=>b.bizInfo).filter(x=>x);
+    let suggestedGrade = '';
+    relBiz.forEach(bi => {
+      const bg = (ws.bizGrades[bi]||{}).grade || '';
+      if(!suggestedGrade || (GRADE_ORDER[bg]||0)>(GRADE_ORDER[suggestedGrade]||0)) suggestedGrade = bg;
+    });
+    const curGrade = g.grade || suggestedGrade;
+    
+    h += '<tr><td><strong>'+escHtml(sys)+'</strong></td>';
+    h += '<td><select onchange="setSysGrade(\''+escHtml(sys)+'\',\'grade\',this.value)" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;">';
+    h += '<option value="">선택</option>';
+    ['C (기밀)','S (민감)','O (공개)'].forEach(opt => {
+      const val = opt.charAt(0);
+      h += '<option value="'+val+'" '+(curGrade===val?'selected':'')+'>'+opt+'</option>';
+    });
+    h += '</select></td>';
+    h += '<td><input type="text" placeholder="예: 연구보고서(S), SW설계서(S)" value="'+escHtml(g.bizInfos || relBiz.map(bi=>(bi+'('+(ws.bizGrades[bi]||{}).grade+')')).join(', '))+'" onchange="setSysGrade(\''+escHtml(sys)+'\',\'bizInfos\',this.value)"></td></tr>';
+  });
+  h += '</tbody></table></div>';
+
+  // 복수등급 처리
+  h += '<div class="question-card"><h3><span class="q-num">3</span>복수 등급 업무정보 포함 시스템 처리 방침</h3>';
+  h += '<div class="option-group">';
+  ["해당 없음 (모든 시스템 단일 등급)","상위등급으로 통합 분류","등급별 시스템 분리 예정"].forEach(opt => {
+    const ck = ws.multiGradePolicy===opt?'checked':'';
+    h += '<label><input type="radio" name="mgp" value="'+escHtml(opt)+'" '+ck+' onchange="wizardState.multiGradePolicy=this.value"><span>'+opt+'</span></label>';
+  });
+  h += '</div></div>';
+
+  // 위치별 등급
+  h += '<div class="question-card" style="border-left:4px solid #38a169;">';
+  h += '<h3><span class="q-num">4</span>위치(영역)별 C/S/O 등급분류</h3>';
+  if(ws.locGrades.length === 0) ws.locGrades = [{location:'', grade:''}];
+  ws.locGrades.forEach((lg, idx) => {
+    h += '<div style="display:grid;grid-template-columns:2fr 1fr 40px;gap:8px;margin-bottom:8px;align-items:center;">';
+    h += '<input type="text" placeholder="예: 인터넷 영역, 기관전산망(업무영역)" value="'+escHtml(lg.location)+'" onchange="wizardState.locGrades['+idx+'].location=this.value">';
+    h += '<select onchange="wizardState.locGrades['+idx+'].grade=this.value" style="padding:8px;border:1px solid #ddd;border-radius:6px;">';
+    h += '<option value="">선택</option>';
+    ['C','S','O'].forEach(g => { h += '<option value="'+g+'" '+(lg.grade===g?'selected':'')+'>'+g+'</option>'; });
+    h += '</select>';
+    h += '<button onclick="wizardState.locGrades.splice('+idx+',1);renderWizardStep()" style="background:#e53e3e;color:white;border:none;border-radius:6px;cursor:pointer;padding:6px;">✕</button>';
+    h += '</div>';
+  });
+  h += '<button class="btn btn-outline" style="font-size:0.85rem;" onclick="wizardState.locGrades.push({location:\'\',grade:\'\'});renderWizardStep()">+ 위치 추가</button>';
+  h += '</div>';
+
+  return h;
+}
+
+function setBizGrade(bi, field, val) {
+  if(!wizardState.bizGrades[bi]) wizardState.bizGrades[bi] = {grade:'', reason:''};
+  wizardState.bizGrades[bi][field] = val;
+}
+function setSysGrade(sys, field, val) {
+  if(!wizardState.sysGrades[sys]) wizardState.sysGrades[sys] = {grade:'', bizInfos:''};
+  wizardState.sysGrades[sys][field] = val;
+}
+
+// ===== STEP 3: 위협식별 =====
+function renderStep3() {
+  const ws = wizardState;
+  let h = '';
+  
+  // Auto-populate scenarios from bundles
+  const bundleScenarios = ws.bundles.filter(b=>b.scenario).map(b=>b.scenario);
+  if(bundleScenarios.length===0) {
+    h += '<div class="card" style="background:#fffbeb;border-left:4px solid #d69e2e;"><p>⚠ 1절(준비)에서 사용 시나리오를 먼저 등록하세요.</p></div>';
+    return h;
+  }
+  
+  h += '<p style="color:var(--text-light);font-size:0.85rem;margin-bottom:16px;">각 사용 시나리오에 대해 위치-주체-객체와 등급을 입력하면, 정보생산·저장 원칙 및 정보이동 원칙 적용 결과가 자동으로 도출됩니다.</p>';
+
+  // Ensure scenarioThreats has entries for each bundle scenario
+  ws.bundles.forEach((b, idx) => {
+    if(!b.scenario) return;
+    if(!ws.scenarioThreats[idx]) {
+      ws.scenarioThreats[idx] = {
+        scenario: b.scenario, location:'', locGrade:'', subject:'', subGrade:'',
+        object:'', objGrade:'', gradeDiff:'', productionResult:'', productionControl:'',
+        movementResult:'', movementControl:'', additionalThreats:''
+      };
+    }
+    ws.scenarioThreats[idx].scenario = b.scenario;
+  });
+  // trim excess
+  ws.scenarioThreats.length = ws.bundles.length;
+
+  ws.scenarioThreats.forEach((st, idx) => {
+    if(!st) return;
+    h += '<div class="card" style="border-left:4px solid #e53e3e;margin-bottom:16px;">';
+    h += '<h3 style="font-size:1.05rem;color:var(--primary);margin-bottom:12px;">시나리오 #'+(idx+1)+': '+escHtml(st.scenario)+'</h3>';
+    
+    // Location / Subject / Object with grades
+    h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;">';
+    
+    // 위치
+    h += '<div style="background:#f7fafc;padding:10px;border-radius:8px;"><label style="font-weight:600;font-size:0.8rem;display:block;margin-bottom:4px;">📍 위치</label>';
+    h += '<input type="text" placeholder="예: 기관전산망" value="'+escHtml(st.location)+'" onchange="updateScenarioField('+idx+',\'location\',this.value)" style="margin-bottom:6px;">';
+    h += '<select onchange="updateScenarioField('+idx+',\'locGrade\',this.value)" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;">';
+    h += '<option value="">등급</option>';
+    ['C','S','O'].forEach(g => { h += '<option value="'+g+'" '+(st.locGrade===g?'selected':'')+'>'+g+'</option>'; });
+    h += '</select></div>';
+    
+    // 주체
+    h += '<div style="background:#f7fafc;padding:10px;border-radius:8px;"><label style="font-weight:600;font-size:0.8rem;display:block;margin-bottom:4px;">👤 주체</label>';
+    h += '<input type="text" placeholder="예: 업무단말" value="'+escHtml(st.subject)+'" onchange="updateScenarioField('+idx+',\'subject\',this.value)" style="margin-bottom:6px;">';
+    h += '<select onchange="updateScenarioField('+idx+',\'subGrade\',this.value)" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;">';
+    h += '<option value="">등급</option>';
+    ['C','S','O'].forEach(g => { h += '<option value="'+g+'" '+(st.subGrade===g?'selected':'')+'>'+g+'</option>'; });
+    h += '</select></div>';
+    
+    // 객체
+    h += '<div style="background:#f7fafc;padding:10px;border-radius:8px;"><label style="font-weight:600;font-size:0.8rem;display:block;margin-bottom:4px;">📦 객체</label>';
+    h += '<input type="text" placeholder="예: 생성형AI" value="'+escHtml(st.object)+'" onchange="updateScenarioField('+idx+',\'object\',this.value)" style="margin-bottom:6px;">';
+    h += '<select onchange="updateScenarioField('+idx+',\'objGrade\',this.value)" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;">';
+    h += '<option value="">등급</option>';
+    ['C','S','O'].forEach(g => { h += '<option value="'+g+'" '+(st.objGrade===g?'selected':'')+'>'+g+'</option>'; });
+    h += '</select></div>';
+    h += '</div>';
+
+    // Grade diff indicator
+    const hasDiff = st.subGrade && st.objGrade && st.subGrade !== st.objGrade;
+    h += '<div style="padding:8px 12px;border-radius:8px;margin-bottom:12px;font-size:0.9rem;'+(hasDiff?'background:#fed7d7;color:#9b2c2c;':'background:#c6f6d5;color:#22543d;')+'">';
+    h += hasDiff ? '⚠ 등급 차이 있음 ('+st.subGrade+'↔'+st.objGrade+') — 보안위협 존재' : (st.subGrade && st.objGrade ? '✅ 동일 등급 — 등급 차이 없음' : '등급을 선택하면 자동 판정됩니다');
+    h += '</div>';
+
+    // Auto-derived: 정보생산·저장 원칙
+    const prod = autoProductionStorage(st.locGrade, st.objGrade);
+    h += '<div style="margin-bottom:10px;"><label style="font-weight:600;font-size:0.85rem;">📋 정보생산·저장 원칙 적용 결과</label>';
+    if(prod.auto && prod.result) {
+      h += '<div style="background:#ebf8ff;padding:10px;border-radius:8px;margin-top:4px;font-size:0.85rem;">🤖 자동도출: '+escHtml(prod.result)+'</div>';
+      st.productionResult = prod.result;
+    } else {
+      h += '<div style="margin-top:4px;"><textarea placeholder="위치와 객체의 등급을 선택하면 자동 입력됩니다. 자동 입력이 불가능한 경우 직접 입력하세요." onchange="updateScenarioField('+idx+',\'productionResult\',this.value)" style="min-height:50px;">'+escHtml(st.productionResult)+'</textarea></div>';
+    }
+    if(prod.result && prod.result.includes('필요')) {
+      h += '<div style="margin-top:6px;"><label style="font-size:0.8rem;color:#e53e3e;">🛡 통제방안 선택/입력</label>';
+      h += '<textarea placeholder="예: 등급에 맞는 별도 저장소 사용, 자동 등급 태깅" onchange="updateScenarioField('+idx+',\'productionControl\',this.value)" style="min-height:40px;">'+escHtml(st.productionControl)+'</textarea></div>';
+    }
+    h += '</div>';
+
+    // Auto-derived: 정보이동 원칙
+    const mov = autoMovement(st.subGrade, st.objGrade);
+    h += '<div style="margin-bottom:10px;"><label style="font-weight:600;font-size:0.85rem;">🔄 정보이동 원칙 적용 결과</label>';
+    if(mov.auto && mov.result) {
+      h += '<div style="background:#ebf8ff;padding:10px;border-radius:8px;margin-top:4px;font-size:0.85rem;">🤖 자동도출: '+escHtml(mov.result)+'</div>';
+      st.movementResult = mov.result;
+    } else {
+      h += '<div style="margin-top:4px;"><textarea placeholder="주체와 객체의 등급을 선택하면 자동 입력됩니다. 자동 입력이 불가능한 경우 직접 입력하세요." onchange="updateScenarioField('+idx+',\'movementResult\',this.value)" style="min-height:50px;">'+escHtml(st.movementResult)+'</textarea></div>';
+    }
+    if(mov.result && mov.result.includes('필터링')) {
+      h += '<div style="margin-top:6px;"><label style="font-size:0.8rem;color:#e53e3e;">🛡 통제방안 선택/입력</label>';
+      h += '<textarea placeholder="예: DLP 적용, CDS 구간 필터링" onchange="updateScenarioField('+idx+',\'movementControl\',this.value)" style="min-height:40px;">'+escHtml(st.movementControl)+'</textarea></div>';
+    }
+    h += '</div>';
+
+    // Additional threats
+    h += '<div><label style="font-weight:600;font-size:0.85rem;">➕ 추가 식별 보안위협</label>';
+    h += '<textarea placeholder="예: 악성코드 유입, 내부자 위협 등 (없으면 비워두세요)" onchange="updateScenarioField('+idx+',\'additionalThreats\',this.value)" style="min-height:40px;margin-top:4px;">'+escHtml(st.additionalThreats)+'</textarea></div>';
+
+    h += '</div>';
+  });
+
+  return h;
+}
+
+function updateScenarioField(idx, field, val) {
+  if(wizardState.scenarioThreats[idx]) {
+    wizardState.scenarioThreats[idx][field] = val;
+    // Re-render to update auto-derived fields
+    if(['locGrade','subGrade','objGrade'].includes(field)) {
+      renderWizardStep();
+    }
+  }
+}
+
+// ===== STEP 4: 보안대책 수립 =====
+function renderStep4() {
+  const ws = wizardState;
+  let h = '';
+  
+  // Determine highest grade among all classified items
+  let maxGrade = 'O';
+  Object.values(ws.bizGrades).forEach(g => { if((GRADE_ORDER[g.grade]||0)>(GRADE_ORDER[maxGrade]||0)) maxGrade = g.grade; });
+  Object.values(ws.sysGrades).forEach(g => { if((GRADE_ORDER[g.grade]||0)>(GRADE_ORDER[maxGrade]||0)) maxGrade = g.grade; });
+
+  // Auto-derive
+  const validThreats = ws.scenarioThreats.filter(st => st && st.scenario);
+  if(validThreats.length === 0) {
+    h += '<div class="card" style="background:#fffbeb;border-left:4px solid #d69e2e;"><p>⚠ 3절(위협식별)에서 시나리오별 위협을 먼저 식별하세요.</p></div>';
+    return h;
+  }
+
+  const derived = deriveControlsForThreats(validThreats, maxGrade);
+  ws.derivedRequirements = derived.requirements;
+  // Merge with existing controls (keep implementation status)
+  const existingMap = {};
+  ws.derivedControls.forEach(c => { existingMap[c.id] = c; });
+  ws.derivedControls = derived.controls.map(c => {
+    const ex = existingMap[c.id];
+    return ex ? {...c, implemented: ex.implemented, implPlan: ex.implPlan} : c;
+  });
+
+  // Show requirements
+  h += '<div class="question-card" style="border-left:4px solid #805ad5;">';
+  h += '<h3><span class="q-num">1</span>자동 도출된 보안 요구사항</h3>';
+  h += '<p style="font-size:0.85rem;color:var(--text-light);margin-bottom:10px;">식별된 보안위협으로부터 자동 도출된 보안 요구사항입니다. (최고 등급: <strong>'+maxGrade+'</strong>)</p>';
+  if(derived.requirements.length>0) {
+    h += '<table class="ctrl-table"><thead><tr><th>보안위협</th><th>보안 요구사항</th></tr></thead><tbody>';
+    derived.requirements.forEach(r => {
+      h += '<tr><td style="font-size:0.85rem;">'+escHtml(r.threat)+'</td><td style="font-size:0.85rem;">'+escHtml(r.req)+'</td></tr>';
+    });
+    h += '</tbody></table>';
+  } else {
+    h += '<p style="color:#38a169;">✅ 등급 차이 없는 시나리오 — 기본 보안통제만 적용됩니다.</p>';
+  }
+  h += '</div>';
+
+  // Show controls with implementation status
+  h += '<div class="question-card" style="border-left:4px solid #3182ce;">';
+  h += '<h3><span class="q-num">2</span>자동 도출된 보안통제 항목 ('+ws.derivedControls.length+'개)</h3>';
+  h += '<p style="font-size:0.85rem;color:var(--text-light);margin-bottom:10px;">각 항목에 대해 현재 구축 여부를 선택하고, 미구축 항목은 구현계획을 입력하세요.</p>';
+  
+  // Group by category
+  const cats = [...new Set(ws.derivedControls.map(c=>c.category))];
+  cats.forEach(cat => {
+    const items = ws.derivedControls.filter(c=>c.category===cat);
+    h += '<div style="margin-bottom:16px;"><h4 style="color:var(--primary);margin-bottom:8px;font-size:0.95rem;">'+escHtml(cat)+' ('+items.length+'개)</h4>';
+    h += '<table class="ctrl-table"><thead><tr><th style="width:90px;">ID</th><th>항목명</th><th style="width:130px;">구축 여부</th><th>구현계획</th></tr></thead><tbody>';
+    items.forEach(c => {
+      const cidx = ws.derivedControls.indexOf(c);
+      h += '<tr>';
+      h += '<td><span class="badge" style="background:var(--primary);color:white;font-size:0.75rem;">'+c.id+'</span></td>';
+      h += '<td style="font-size:0.85rem;">'+escHtml(c.name)+'<br><small style="color:var(--text-light);">'+escHtml(c.subcategory||'')+'</small></td>';
+      h += '<td><select onchange="setControlImpl('+cidx+',this.value)" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:0.85rem;">';
+      h += '<option value="">선택</option>';
+      h += '<option value="yes" '+(c.implemented==='yes'?'selected':'')+'>✅ 구축됨</option>';
+      h += '<option value="no" '+(c.implemented==='no'?'selected':'')+'>❌ 미구축</option>';
+      h += '<option value="partial" '+(c.implemented==='partial'?'selected':'')+'>⚠ 일부 구축</option>';
+      h += '</select></td>';
+      h += '<td>';
+      if(c.implemented==='no' || c.implemented==='partial') {
+        h += '<input type="text" placeholder="구현방법 / 일정 / 담당자" value="'+escHtml(c.implPlan)+'" onchange="setControlPlan('+cidx+',this.value)" style="font-size:0.85rem;">';
+      } else {
+        h += '<span style="color:var(--text-light);font-size:0.85rem;">'+(c.implemented==='yes'?'구축 완료':'—')+'</span>';
+      }
+      h += '</td></tr>';
+    });
+    h += '</tbody></table></div>';
+  });
+  h += '</div>';
+
+  // Additional controls
+  h += '<div class="question-card"><h3><span class="q-num">3</span>자체 정의 추가 보안통제</h3>';
+  h += '<textarea placeholder="부록1 외에 자체 정의한 추가 보안통제 항목이 있으면 입력하세요. 없으면 비워두세요." onchange="wizardState.additionalControls=this.value" style="min-height:60px;">'+escHtml(ws.additionalControls)+'</textarea></div>';
+
+  return h;
+}
+
+function setControlImpl(idx, val) {
+  wizardState.derivedControls[idx].implemented = val;
+  renderWizardStep();
+}
+function setControlPlan(idx, val) {
+  wizardState.derivedControls[idx].implPlan = val;
+}
+
+// ===== STEP 5: 적절성 평가 =====
+function renderStep5() {
+  const ws = wizardState;
+  const a = ws.assessments;
+  let h = '';
+  
+  const evalItems = [
+    {id:'a1', label:'1절 준비 단계 적절성', desc:'업무정보·정보시스템·시나리오·보안목표가 빠짐없이 식별되었는가?'},
+    {id:'a2', label:'2절 C/S/O 등급분류 적절성', desc:'모든 업무정보·정보시스템·위치에 대해 등급이 분류되었는가?'},
+    {id:'a3', label:'3절 위협식별 적절성', desc:'모든 시나리오에 대해 위치-주체-객체 모델링과 원칙 적용이 완료되었는가?'},
+    {id:'a4', label:'4절 보안대책 수립 적절성', desc:'식별된 모든 위협에 대해 보안통제가 선택되고 구현계획이 수립되었는가?'}
+  ];
+
+  evalItems.forEach((item, i) => {
+    h += '<div class="question-card"><h3><span class="q-num">'+(i+1)+'</span>'+item.label+'</h3>';
+    h += '<p style="color:var(--text-light);font-size:0.85rem;margin-bottom:10px;">'+item.desc+'</p>';
+    h += '<div class="option-group">';
+    ['적합 — 모든 평가지표 충족','부적합 — 일부 보완 필요'].forEach(opt => {
+      const ck = (a[item.id]||{}).result===opt?'checked':'';
+      h += '<label><input type="radio" name="'+item.id+'" value="'+escHtml(opt)+'" '+ck+' onchange="setAssessment(\''+item.id+'\',\'result\',this.value)"><span>'+opt+'</span></label>';
+    });
+    h += '</div>';
+    if((a[item.id]||{}).result && (a[item.id]||{}).result.includes('부적합')) {
+      h += '<textarea placeholder="보완이 필요한 항목과 조치 계획을 입력하세요." onchange="setAssessment(\''+item.id+'\',\'remedy\',this.value)" style="margin-top:8px;min-height:50px;">'+escHtml((a[item.id]||{}).remedy||'')+'</textarea>';
+    }
+    h += '</div>';
+  });
+
+  h += '<div class="question-card"><h3><span class="q-num">5</span>정보보안담당관 최종 확인</h3>';
+  h += '<div class="option-group">';
+  ['예, 정보보안담당관이 확인 완료','아니오, 아직 확인 전'].forEach(opt => {
+    const ck = (a.finalCheck||'')=== opt?'checked':'';
+    h += '<label><input type="radio" name="finalCheck" value="'+escHtml(opt)+'" '+ck+' onchange="wizardState.assessments.finalCheck=this.value"><span>'+opt+'</span></label>';
+  });
+  h += '</div></div>';
+
+  h += '<div class="question-card"><h3><span class="q-num">6</span>국정원 보안성 검토 의뢰 준비</h3>';
+  h += '<div class="option-group">';
+  ['예, 4종 제출문서 준비 완료','아니오, 준비 중'].forEach(opt => {
+    const ck = (a.nisReady||'')=== opt?'checked':'';
+    h += '<label><input type="radio" name="nisReady" value="'+escHtml(opt)+'" '+ck+' onchange="wizardState.assessments.nisReady=this.value"><span>'+opt+'</span></label>';
+  });
+  h += '</div></div>';
+
+  return h;
+}
+
+function setAssessment(id, field, val) {
+  if(!wizardState.assessments[id]) wizardState.assessments[id] = {};
+  wizardState.assessments[id][field] = val;
+  if(field==='result') renderWizardStep();
+}
+
+
+// === NAVIGATION ===
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => {
+    if(b.textContent.includes(getSectionLabel(id))) b.classList.add('active');
+  });
+  if(id==='wizard') renderWizardStep();
+  if(id==='models') renderModels();
+  if(id==='controls') renderControls();
+  if(id==='ai') renderAI();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function getSectionLabel(id) {
+  const m = {home:'홈',basics:'기본지식',wizard:'5단계',models:'정보서비스',controls:'보안통제',ai:'AI',output:'산출물'};
+  return m[id]||'';
+}
+
+function showSubtab(section, tabId) {
+  document.querySelectorAll('#'+section+' .subtab-content').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('#'+section+' .subtab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// === WIZARD ===
+function goToStep(step) {
+  wizardState.currentStep = step;
+  renderWizardStep();
+  updateStepNav();
+}
+
+function completeStep(step) {
+  wizardState.completed[step-1] = true;
+  updateStepNav();
+  if(step<5) goToStep(step+1);
+}
+
+function updateStepNav() {
+  const btns = document.querySelectorAll('#stepNav .step-btn');
+  btns.forEach((b,i) => {
+    b.classList.remove('active','completed');
+    if(i+1 === wizardState.currentStep) b.classList.add('active');
+    if(wizardState.completed[i]) b.classList.add('completed');
+  });
+  const pct = (wizardState.completed.filter(Boolean).length / 5) * 100;
+  document.getElementById('wizardProgress').style.width = pct+'%';
+}
+
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+// === MODELS ===
+function renderModels() {
+  const grid = document.getElementById('modelGrid');
+  if(grid.children.length > 0) return;
+  
+  MODELS_DATA.models.forEach(m => {
+    const card = document.createElement('div');
+    card.className = 'model-card';
+    card.onclick = () => showModelDetail(m.number);
+    card.innerHTML = '<div class="model-num">'+m.number+'</div><h4>모델'+m.number+': '+m.name+'</h4><p>'+m.description.substring(0,100)+'...</p>';
+    grid.appendChild(card);
+  });
+  
+  // Add custom model card
+  const custom = document.createElement('div');
+  custom.className = 'model-card';
+  custom.style.borderStyle = 'dashed';
+  custom.innerHTML = '<div class="model-num" style="background:var(--text-light);">+</div><h4>부록 외 모델 (자체 정의)</h4><p>11가지 부록 모델에 해당하지 않는 경우, N2SF 5단계 절차에 따라 자체적으로 위협식별 및 보안대책을 수립할 수 있습니다.</p>';
+  grid.appendChild(custom);
+}
+
+function showModelDetail(num) {
+  const m = MODELS_DATA.models.find(x => x.number===num);
+  if(!m) return;
+  const area = document.getElementById('modelDetailArea');
+  area.innerHTML = '<div class="card" style="margin-top:20px;border:2px solid var(--accent);">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">'+
+    '<h3 style="font-size:1.2rem;">모델'+m.number+': '+m.name+'</h3>'+
+    '<button class="btn btn-sm btn-outline" onclick="document.getElementById(\'modelDetailArea\').innerHTML=\'\'">닫기</button></div>'+
+    '<p style="margin-bottom:16px;">'+m.description+'</p>'+
+    '<div class="grid grid-2">'+
+    '<div><strong>주요 사용 시나리오</strong><div class="tag-list">'+m.key_scenarios.map(s=>'<span class="tag">'+s+'</span>').join('')+'</div></div>'+
+    '<div><strong>네트워크 구성</strong><p style="font-size:0.9rem;color:var(--text-light);">'+m.network_architecture+'</p></div>'+
+    '</div>'+
+    '<div style="margin-top:16px;"><strong>C/S/O 평가</strong>'+
+    '<div class="table-wrap"><table><tr><th>구분</th><th>대상</th></tr>'+
+    '<tr><td>주체(Subject)</td><td>'+m.cso_evaluation.subjects.join(', ')+'</td></tr>'+
+    '<tr><td>객체(Object)</td><td>'+m.cso_evaluation.objects.join(', ')+'</td></tr>'+
+    '<tr><td>위치(Domain)</td><td>'+m.cso_evaluation.locations.join(', ')+'</td></tr>'+
+    '</table></div></div>'+
+    '<div style="margin-top:16px;"><strong>주요 보안위협</strong><div class="tag-list">'+m.key_threats.map(t=>'<span class="tag" style="background:#fed7d7;">'+t+'</span>').join('')+'</div></div>'+
+    '<div style="margin-top:16px;"><strong>주요 보안통제</strong><div class="tag-list">'+m.key_security_controls.map(c=>'<span class="tag" style="background:#bee3f8;">'+c+'</span>').join('')+'</div></div>'+
+    '</div>';
+  area.scrollIntoView({behavior:'smooth'});
+}
+
+// === CONTROLS ===
+function renderControls() {
+  const catSel = document.getElementById('ctrlCategory');
+  if(catSel.options.length <= 1) {
+    CONTROLS_DATA.categories.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c; opt.textContent = c;
+      catSel.appendChild(opt);
+    });
+  }
+  filterControls();
+}
+
+function filterControls() {
+  const cat = document.getElementById('ctrlCategory').value;
+  const grade = document.getElementById('ctrlGrade').value;
+  const search = document.getElementById('ctrlSearch').value.toLowerCase();
+  
+  let filtered = CONTROLS_DATA.controls.filter(c => {
+    if(cat && c.category !== cat) return false;
+    if(grade === 'C' && !c.C) return false;
+    if(grade === 'S' && !c.S) return false;
+    if(grade === 'O' && !c.O) return false;
+    if(search && !c.id.toLowerCase().includes(search) && !c.name.toLowerCase().includes(search)) return false;
+    return true;
+  });
+  
+  document.getElementById('controlCount').textContent = '검색 결과: '+filtered.length+'개 / 전체 '+CONTROLS_DATA.controls.length+'개';
+  
+  const tbody = document.getElementById('controlsBody');
+  tbody.innerHTML = filtered.map(c => 
+    '<tr><td>'+c.id+'</td><td>'+c.name+'</td><td>'+c.category+'</td><td>'+c.subcategory+'</td>'+
+    '<td>'+(c.C?'<span class="badge badge-c">C</span>':'―')+'</td>'+
+    '<td>'+(c.S?'<span class="badge badge-s">S</span>':'―')+'</td>'+
+    '<td>'+(c.O?'<span class="badge badge-o">O</span>':'―')+'</td></tr>'
+  ).join('');
+}
+
+// === AI GUIDE ===
+function showAiTab(tabId, btn) {
+  document.querySelectorAll('#ai .subtab-content').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('#ai .subtab-nav .subtab-btn').forEach(b => b.classList.remove('active'));
+  var target = document.getElementById(tabId);
+  if(target) target.classList.add('active');
+  if(btn) btn.classList.add('active');
+  renderAiTab(tabId);
+}
+
+function renderAiTab(tabId) {
+  const el = document.getElementById(tabId);
+  if(el.dataset.rendered) return;
+  el.dataset.rendered = '1';
+  let h = '';
+  
+  if(tabId === 'ai-overview') {
+    h += '<div class="card"><h3>개요</h3><p>'+AI_DATA.overview+'</p></div>';
+    h += '<div class="card"><h3>AI 보안 6대 원칙</h3><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">';
+    AI_DATA.ai_security_principles.forEach((p,i) => {
+      const parts = p.split(':');
+      h += '<div style="background:var(--bg);padding:14px;border-radius:8px;border-left:4px solid var(--primary);"><strong>'+parts[0].trim()+'</strong><p style="margin:6px 0 0;font-size:0.85rem;color:var(--text-light);">'+parts.slice(1).join(':').trim()+'</p></div>';
+    });
+    h += '</div></div>';
+    h += '<div class="card"><h3>AI 보안 전체 구조</h3><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center;">';
+    h += '<div style="background:#fed7d7;padding:16px;border-radius:8px;"><div style="font-size:2rem;font-weight:700;">15</div><div>보안위협 유형<br><small>(T01~T15)</small></div></div>';
+    h += '<div style="background:#bee3f8;padding:16px;border-radius:8px;"><div style="font-size:2rem;font-weight:700;">30</div><div>보안대책<br><small>(M01~M30)</small></div></div>';
+    h += '<div style="background:#c6f6d5;padding:16px;border-radius:8px;"><div style="font-size:2rem;font-weight:700;">4+2</div><div>구축유형 4 + 활용유형 2<br><small>(에이전틱·피지컬)</small></div></div>';
+    h += '</div></div>';
+  }
+  
+  if(tabId === 'ai-threats') {
+    h += '<div class="card"><h3>AI시스템 15대 보안위협 (T01~T15)</h3>';
+    h += '<table class="ctrl-table"><thead><tr><th style="width:60px;">번호</th><th style="width:180px;">보안위협</th><th>설명</th><th style="width:100px;">수명주기</th></tr></thead><tbody>';
+    AI_DATA.threats.forEach(t => {
+      h += '<tr><td><span class="badge" style="background:#e53e3e;color:#fff;">'+t.id+'</span></td><td><strong>'+t.name+'</strong></td><td style="font-size:0.85rem;">'+t.desc+'</td><td><span class="tag" style="background:#fefcbf;font-size:0.75rem;">'+t.lifecycle+'</span></td></tr>';
+    });
+    h += '</tbody></table></div>';
+  }
+  
+  if(tabId === 'ai-controls') {
+    const cats = [...new Set(AI_DATA.controls.map(c=>c.cat))];
+    h += '<div style="margin-bottom:16px;"><input type="text" id="aiCtrlSearch" placeholder="보안통제 검색 (예: 데이터, 필터링, M13...)" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:0.9rem;" oninput="filterAiControls()"></div>';
+    h += '<div id="aiCtrlList">';
+    cats.forEach(cat => {
+      const items = AI_DATA.controls.filter(c=>c.cat===cat);
+      const colors = {"데이터 보안":"#3182ce","모델 보안":"#805ad5","운영 보안":"#dd6b20","권한 및 제어":"#e53e3e","평가 및 개선":"#38a169","관리 보안":"#718096"};
+      h += '<div class="card ai-cat-card" data-cat="'+cat+'"><h3><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:'+(colors[cat]||'#999')+';margin-right:8px;"></span>'+cat+' ('+items.length+'개)</h3>';
+      h += '<table class="ctrl-table"><thead><tr><th style="width:60px;">번호</th><th style="width:250px;">보안대책</th><th>체크리스트</th><th style="width:100px;">관련 위협</th></tr></thead><tbody>';
+      items.forEach(c => {
+        h += '<tr class="ai-ctrl-row" data-search="'+c.id+' '+c.name+' '+c.checklist+'"><td><span class="badge" style="background:'+(colors[cat]||'#999')+';color:#fff;">'+c.id+'</span></td><td><strong>'+c.name+'</strong></td><td style="font-size:0.85rem;">'+c.checklist+'</td><td style="font-size:0.8rem;">'+c.threats.join(', ')+'</td></tr>';
+      });
+      h += '</tbody></table></div>';
+    });
+    h += '</div>';
+  }
+  
+  if(tabId === 'ai-build') {
+    h += '<p style="margin-bottom:16px;color:var(--text-light);">AI시스템의 구축 유형에 따라 중점 검토해야 할 보안위협과 보안대책이 다릅니다. 각 유형을 선택하여 상세 보안실행 가이드를 확인하세요.</p>';
+    AI_DATA.buildTypes.forEach(bt => {
+      h += '<div class="card" style="border-left:4px solid var(--primary);"><div onclick="var d=this.parentElement.querySelector(\'.bt-detail\');d.style.display=d.style.display===\'none\'?\'block\':\'none\'" style="cursor:pointer;">';
+      h += '<h3 style="font-size:1.15rem;">'+bt.icon+' '+bt.name+'</h3>';
+      h += '<p style="color:var(--text-light);margin-bottom:8px;">'+bt.desc+'</p>';
+      h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;"><span class="tag" style="background:#e2e8f0;">N2SF 등급: '+bt.n2sfGrade+'</span><span class="tag" style="background:#e2e8f0;">관련 N2SF 모델: '+bt.n2sfModel+'</span></div>';
+      h += '</div><div class="bt-detail">';
+      h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">';
+      h += '<div style="background:#fff5f5;padding:12px;border-radius:8px;"><strong style="color:#e53e3e;">⚠ 주요 위협</strong><ul style="margin:8px 0 0;padding-left:18px;">';
+      bt.keyThreats.forEach(t => { h += '<li style="margin:4px 0;font-size:0.85rem;">'+t+'</li>'; });
+      h += '</ul></div>';
+      h += '<div style="background:#ebf8ff;padding:12px;border-radius:8px;"><strong style="color:#3182ce;">🛡 중점 보안대책</strong><ul style="margin:8px 0 0;padding-left:18px;">';
+      bt.keyControls.forEach(c => { h += '<li style="margin:4px 0;font-size:0.85rem;">'+c+'</li>'; });
+      h += '</ul></div></div>';
+      h += '<div style="background:#f0fff4;padding:12px;border-radius:8px;margin-top:12px;"><strong>📋 주요 구축 사례</strong><ul style="margin:8px 0 0;padding-left:18px;">';
+      bt.examples.forEach(e => { h += '<li style="margin:4px 0;font-size:0.85rem;">'+e+'</li>'; });
+      h += '</ul></div>';
+      h += '<div style="background:#fefcbf;padding:12px;border-radius:8px;margin-top:12px;"><strong>🔑 보안위협 Key Points</strong><ul style="margin:8px 0 0;padding-left:18px;">';
+      bt.keyPoints.forEach(p => { h += '<li style="margin:4px 0;font-size:0.85rem;">'+p+'</li>'; });
+      h += '</ul></div>';
+      h += '</div></div>';
+    });
+  }
+  
+  if(tabId === 'ai-use') {
+    h += '<p style="margin-bottom:16px;color:var(--text-light);">최신 AI 기술(에이전틱 AI, 피지컬 AI) 활용 시 고유의 보안위협과 보안대책을 확인하세요.</p>';
+    AI_DATA.useTypes.forEach(ut => {
+      h += '<div class="card" style="border-left:4px solid '+(ut.id==="ut1"?"#805ad5":"#dd6b20")+';"><h3 style="font-size:1.2rem;">'+ut.icon+' '+ut.name+'</h3><p style="color:var(--text-light);margin-bottom:16px;">'+ut.desc+'</p>';
+      h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">';
+      h += '<div><h4 style="color:#e53e3e;margin-bottom:8px;">⚠ 보안위협 ('+ut.threats.length+'개)</h4>';
+      h += '<table class="ctrl-table"><thead><tr><th style="width:50px;">번호</th><th style="width:160px;">위협</th><th>설명</th></tr></thead><tbody>';
+      ut.threats.forEach(t => {
+        h += '<tr><td><span class="badge" style="background:#e53e3e;color:#fff;font-size:0.7rem;">'+t.id+'</span></td><td style="font-size:0.85rem;"><strong>'+t.name+'</strong></td><td style="font-size:0.8rem;">'+t.desc+'</td></tr>';
+      });
+      h += '</tbody></table></div>';
+      h += '<div><h4 style="color:#3182ce;margin-bottom:8px;">🛡 보안대책 ('+ut.controls.length+'개)</h4>';
+      h += '<table class="ctrl-table"><thead><tr><th style="width:70px;">번호</th><th>보안대책</th></tr></thead><tbody>';
+      ut.controls.forEach(c => {
+        h += '<tr><td><span class="badge" style="background:'+(ut.id==="ut1"?"#805ad5":"#dd6b20")+';color:#fff;font-size:0.7rem;">'+c.id+'</span></td><td style="font-size:0.85rem;">'+c.name+'</td></tr>';
+      });
+      h += '</tbody></table></div></div></div>';
+    });
+  }
+  
+  if(tabId === 'ai-n2sf') {
+    const m = AI_DATA.n2sfMapping;
+    h += '<div class="card"><h3>N2SF ↔ AI보안 가이드북 연관성</h3><p style="margin-bottom:16px;">'+m.desc+'</p>';
+    h += '<table class="ctrl-table"><thead><tr><th style="width:200px;">AI 보안대책</th><th style="width:200px;">N2SF 보안통제 영역</th><th>연관 관계</th></tr></thead><tbody>';
+    m.mappings.forEach(mp => {
+      h += '<tr><td><span class="badge" style="background:#3182ce;color:#fff;font-size:0.75rem;">'+mp.ai.split(' ')[0]+'</span> '+mp.ai.split(' ').slice(1).join(' ')+'</td><td><span class="badge" style="background:#2d3748;color:#fff;font-size:0.75rem;">N2SF</span> '+mp.n2sf+'</td><td style="font-size:0.85rem;">'+mp.relation+'</td></tr>';
+    });
+    h += '</tbody></table></div>';
+    h += '<div class="card"><h3>AI 시스템 구축 시 N2SF 적용 절차</h3><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;">';
+    ["1. 준비: AI 정보서비스 식별","2. 등급분류: AI시스템 C/S/O 등급 부여","3. 위협식별: AI 고유 위협(T01~T15) + N2SF 위협 통합 식별","4. 보안대책: AI 보안통제(M01~M30) + N2SF 보안통제 통합 선택","5. 적절성평가: AI 보안 체크리스트 + N2SF 적절성 평가 수행"].forEach((s,i) => {
+      h += '<div style="background:var(--primary);color:#fff;padding:10px 16px;border-radius:8px;font-size:0.85rem;flex:1;min-width:200px;">'+s+'</div>';
+      if(i < 4) h += '<span style="font-size:1.5rem;color:var(--primary);">→</span>';
+    });
+    h += '</div></div>';
+  }
+  
+  el.innerHTML = h;
+}
+
+function filterAiControls() {
+  const q = document.getElementById('aiCtrlSearch').value.toLowerCase();
+  document.querySelectorAll('.ai-ctrl-row').forEach(r => {
+    r.style.display = r.dataset.search.toLowerCase().includes(q) ? '' : 'none';
+  });
+  document.querySelectorAll('.ai-cat-card').forEach(card => {
+    const visible = card.querySelectorAll('.ai-ctrl-row[style=""],.ai-ctrl-row:not([style])');
+    const hidden = card.querySelectorAll('.ai-ctrl-row[style*="none"]');
+    card.style.display = (visible.length === 0 && hidden.length > 0) ? 'none' : '';
+  });
+}
+
+function renderAI() {
+  renderAiTab('ai-overview');
+}
+
+function toggleAccordion(el) {
+  el.classList.toggle('open');
+  el.nextElementSibling.classList.toggle('open');
+}
+
+// === OUTPUT GENERATION ===
+
+function generateOutput() {
+  const ws = wizardState;
+  const now = new Date().toISOString().split('T')[0];
+  
+  let out = `══════════════════════════════════════════════════════
+  국가 망 보안체계(N2SF) 자체 보안대책
+══════════════════════════════════════════════════════
+작성일: ${now}
+기관명: ${ws.orgName || '[미입력]'}
+사업명: ${ws.projectName || '[미입력]'}
+적절성 평가 책임자: ${ws.responsible || '[미입력]'}
+BRM 분석: ${ws.brmDone || '[미입력]'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. 업무정보 · 정보시스템 · 시나리오 식별 (1절 준비)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  
+  ws.bundles.forEach((b, i) => {
+    out += `\n[묶음 ${i+1}]\n`;
+    out += `  업무정보: ${b.bizInfo || '-'}\n`;
+    out += `  정보시스템: ${b.system || '-'}\n`;
+    out += `  사용 시나리오: ${b.scenario || '-'}\n`;
+    out += `  보안목표: ${b.secGoal || '-'}\n`;
+    out += `  참조 모델: ${(b.models||[]).join(', ') || '-'}\n`;
+  });
+
+  out += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. C/S/O 등급분류 (2절)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  
+  out += `\n[업무정보별 등급]\n`;
+  Object.entries(ws.bizGrades).forEach(([bi, g]) => {
+    out += `  ${bi}: ${g.grade || '미분류'} (${g.reason || '-'})\n`;
+  });
+  
+  out += `\n[정보시스템별 등급]\n`;
+  Object.entries(ws.sysGrades).forEach(([sys, g]) => {
+    out += `  ${sys}: ${g.grade || '미분류'} (${g.bizInfos || '-'})\n`;
+  });
+  
+  out += `\n[복수등급 처리]: ${ws.multiGradePolicy || '-'}\n`;
+  
+  out += `\n[위치(영역)별 등급]\n`;
+  ws.locGrades.forEach(lg => {
+    if(lg.location) out += `  ${lg.location}: ${lg.grade || '미분류'}\n`;
+  });
+
+  out += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. 위협식별 결과 (3절)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  
+  ws.scenarioThreats.forEach((st, i) => {
+    if(!st || !st.scenario) return;
+    out += `\n[시나리오 ${i+1}] ${st.scenario}\n`;
+    out += `  위치: ${st.location || '-'} (${st.locGrade || '-'})\n`;
+    out += `  주체: ${st.subject || '-'} (${st.subGrade || '-'})\n`;
+    out += `  객체: ${st.object || '-'} (${st.objGrade || '-'})\n`;
+    out += `  등급차이: ${(st.subGrade && st.objGrade && st.subGrade !== st.objGrade) ? '있음('+st.subGrade+'↔'+st.objGrade+')' : '없음'}\n`;
+    out += `  정보생산·저장 원칙: ${st.productionResult || '-'}\n`;
+    if(st.productionControl) out += `    → 통제방안: ${st.productionControl}\n`;
+    out += `  정보이동 원칙: ${st.movementResult || '-'}\n`;
+    if(st.movementControl) out += `    → 통제방안: ${st.movementControl}\n`;
+    if(st.additionalThreats) out += `  추가 위협: ${st.additionalThreats}\n`;
+  });
+
+  out += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. 보안 요구사항 (4절 - 자동 도출)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  
+  ws.derivedRequirements.forEach((r, i) => {
+    out += `  ${i+1}. [${r.threat}] → ${r.req}\n`;
+  });
+
+  out += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5. 보안통제 항목 및 구현계획 (4절)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  
+  const implStats = {yes:0, no:0, partial:0, unset:0};
+  ws.derivedControls.forEach(c => {
+    const status = c.implemented === 'yes' ? '✅구축' : c.implemented === 'no' ? '❌미구축' : c.implemented === 'partial' ? '⚠일부' : '미선택';
+    if(c.implemented) implStats[c.implemented]++; else implStats.unset++;
+    out += `  [${c.id}] ${c.name} (${c.category}) — ${status}`;
+    if(c.implPlan) out += ` → 계획: ${c.implPlan}`;
+    out += `\n`;
+  });
+  out += `\n  [구현 현황] 구축: ${implStats.yes} | 미구축: ${implStats.no} | 일부: ${implStats.partial} | 미선택: ${implStats.unset}\n`;
+  
+  if(ws.additionalControls) {
+    out += `\n[자체 정의 추가 보안통제]\n  ${ws.additionalControls}\n`;
+  }
+
+  out += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6. 적절성 평가 결과 (5절)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  
+  const a = ws.assessments;
+  ['a1','a2','a3','a4'].forEach((id, i) => {
+    const labels = ['준비 단계', 'C/S/O 등급분류', '위협식별', '보안대책 수립'];
+    const val = a[id] || {};
+    out += `  ${labels[i]}: ${val.result || '[미평가]'}\n`;
+    if(val.remedy) out += `    보완사항: ${val.remedy}\n`;
+  });
+  out += `  정보보안담당관 확인: ${a.finalCheck || '[미확인]'}\n`;
+  out += `  국정원 보안성검토 준비: ${a.nisReady || '[미확인]'}\n`;
+
+  out += `\n══════════════════════════════════════════════════════\n`;
+  out += `본 문서는 N2SF 실행가이드에 의해 자동 생성되었습니다.\n`;
+
+  document.getElementById('outputPreview').innerText = out;
+  wizardState._lastOutput = out;
+}
+
+function downloadOutput() {
+  const out = wizardState._lastOutput || '';
+  if(!out) { generateOutput(); }
+  const text = wizardState._lastOutput || document.getElementById('outputPreview').innerText;
+  const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'N2SF_자체보안대책_'+(new Date().toISOString().split('T')[0])+'.txt';
+  a.click();
+}
+
+</script>
+</body>
+</html>
