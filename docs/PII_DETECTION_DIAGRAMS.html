@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clef 개인정보 판별 설계</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@600;700&display=swap">
+<style>
+/* Layout: 한 열 설계 도면. 도식마다 번호 없는 절 제목 + 그림 + 설명, 위쪽에 절 이동 목록 */
+:root {
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --fg: #16202c;
+  --muted: #5a6677;
+  --line: #c6cfdb;
+  --accent: #1d5bb8;
+  --accent-2: #7fa3db;
+  --accent-soft: #e2ebf8;
+  --cpu-soft: #eceff3;
+  --block: #b8322a;
+  --mask: #a96d12;
+  --allow: #2b7a4b;
+  --hold: #6a47b8;
+  --font-display: "Noto Serif KR", "Nanum Myeongjo", serif;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e131a; --surface: #151c26; --fg: #e5eaf1; --muted: #98a4b4; --line: #344152;
+    --accent: #6b9ff0; --accent-2: #3d6aae; --accent-soft: #1a2940; --cpu-soft: #1c232d;
+    --block: #ef6a5c; --mask: #e2a84a; --allow: #5cc189; --hold: #a68cf2;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e131a; --surface: #151c26; --fg: #e5eaf1; --muted: #98a4b4; --line: #344152;
+  --accent: #6b9ff0; --accent-2: #3d6aae; --accent-soft: #1a2940; --cpu-soft: #1c232d;
+  --block: #ef6a5c; --mask: #e2a84a; --allow: #5cc189; --hold: #a68cf2;
+  color-scheme: dark;
+}
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.7; }
+.wrap { max-width: 1040px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 72px; }
+header.top { display: grid; gap: 10px; padding-bottom: 28px; border-bottom: 1px solid var(--line); }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; }
+h1 { font-family: var(--font-display); font-size: clamp(28px, 4.4vw, 40px); line-height: 1.25; margin: 0; text-wrap: balance; }
+.lede { max-width: 68ch; color: var(--muted); margin: 0; }
+nav.toc { display: flex; flex-wrap: wrap; gap: 6px 8px; margin-top: 8px; }
+nav.toc a { font-size: 13px; color: var(--fg); text-decoration: none; border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; background: var(--surface); }
+nav.toc a:hover, nav.toc a:focus-visible { border-color: var(--accent); color: var(--accent); outline: none; }
+section { padding-top: 44px; display: grid; gap: 14px; }
+h2 { font-family: var(--font-display); font-size: 22px; margin: 0; line-height: 1.35; text-wrap: balance; }
+section > p { margin: 0; max-width: 72ch; }
+.muted { color: var(--muted); }
+code, .mono { font-family: var(--font-mono); font-size: .9em; }
+figure { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 18px 18px 14px; display: grid; gap: 12px; }
+.scroll { overflow-x: auto; }
+figure svg { display: block; width: 100%; height: auto; min-width: 720px; }
+figcaption { font-size: 13.5px; color: var(--muted); max-width: 80ch; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 14px; height: 14px; border-radius: 3px; border: 1.5px solid var(--line); display: inline-block; }
+.sw.gpu { background: var(--accent-soft); border-color: var(--accent); }
+.sw.cpu { background: var(--surface); border-color: var(--line); }
+
+/* 역할 분리 */
+.roles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.role { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; display: grid; gap: 4px; align-content: start; }
+.role b { font-size: 15px; }
+.role .who { font-family: var(--font-mono); font-size: 12.5px; color: var(--accent); }
+.role p { margin: 0; font-size: 13.5px; color: var(--muted); }
+.rule { border-left: 3px solid var(--accent); padding: 8px 14px; background: var(--accent-soft); border-radius: 0 6px 6px 0; max-width: 80ch; font-size: 14.5px; }
+@media (max-width: 720px) { .roles { grid-template-columns: minmax(0, 1fr); } }
+
+/* SVG 공통 */
+.dg { color: var(--muted); font-family: var(--font-body); }
+.dg .box { fill: var(--surface); stroke: var(--line); stroke-width: 1.2; }
+.dg .box.gpu { fill: var(--accent-soft); stroke: var(--accent); }
+.dg .box.key { stroke-width: 2.2; }
+.dg .box.band { fill: var(--cpu-soft); stroke: none; }
+.dg .box.dash { fill: none; stroke: var(--muted); stroke-dasharray: 5 4; }
+.dg .box.blk { stroke: var(--block); stroke-width: 1.8; }
+.dg .box.hld { stroke: var(--hold); stroke-width: 1.8; }
+.dg .box.ok { stroke: var(--allow); stroke-width: 1.8; }
+.dg .t { fill: var(--fg); font-size: 14px; font-weight: 600; }
+.dg .s { fill: var(--muted); font-size: 12px; }
+.dg .m { fill: var(--fg); font-family: var(--font-mono); font-size: 12px; }
+.dg .lab { fill: var(--muted); font-size: 12px; }
+.dg .lab-a { fill: var(--accent); font-size: 12.5px; font-weight: 600; }
+.dg .chip { fill: var(--muted); font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; }
+.dg .chip.g { fill: var(--accent); }
+.dg .edge { stroke: currentColor; stroke-width: 1.4; fill: none; }
+.dg .edge.a { stroke: var(--accent); }
+.dg .edge.d { stroke-dasharray: 5 4; }
+.dg .brk { stroke: var(--accent); stroke-width: 1.4; fill: none; }
+.dg .seg-card { fill: var(--muted); }
+.dg .seg-main { fill: var(--accent); }
+.dg .seg-re { fill: var(--accent-2); }
+.dg .seg-pert { fill: var(--mask); }
+.dg .seg-free { fill: none; stroke: var(--line); stroke-dasharray: 4 3; }
+.dg .track { fill: var(--line); opacity: .55; }
+.dg .bar { fill: var(--accent); }
+.dg .dec { fill: none; stroke: var(--block); stroke-dasharray: 6 4; stroke-width: 1.4; }
+.dg .tb { fill: var(--block); font-size: 12px; }
+.dg .th { fill: var(--hold); font-size: 13px; font-weight: 600; }
+.dg .tk { fill: var(--allow); font-size: 13px; font-weight: 600; }
+.dg .tick { stroke: var(--line); stroke-width: 1; }
+
+/* 표 */
+.tbl-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 13.5px; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+thead th { font-size: 12px; letter-spacing: .04em; color: var(--muted); font-weight: 600; background: var(--cpu-soft); }
+tbody tr:last-child td { border-bottom: none; }
+.pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 9px; border-radius: 999px; border: 1.4px solid; white-space: nowrap; }
+.p-block { color: var(--block); border-color: var(--block); }
+.p-mask { color: var(--mask); border-color: var(--mask); }
+.p-hold { color: var(--hold); border-color: var(--hold); }
+.p-ok { color: var(--allow); border-color: var(--allow); }
+.p-log { color: var(--muted); border-color: var(--line); }
+.codes { display: grid; gap: 2px; font-family: var(--font-mono); font-size: 12.5px; }
+.codes span small { font-family: var(--font-body); color: var(--muted); font-size: 12px; margin-left: 6px; }
+footer { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); display: grid; gap: 4px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">설계 제안서 v0.2 · 도식 모음</div>
+    <h1>Clef 개인정보 판별 설계</h1>
+    <p class="lede">온프레미스 환경(24GB GPU 1장)에서 문서 속 개인정보의 존재 여부, 엔티티 종류, 차단 여부를 판정하는 구조입니다. 대상 법역은 한국, 일본, 미국, 사우디아라비아이며, 판정 경로에는 디코더를 두지 않습니다.</p>
+    <nav class="toc" aria-label="절 이동">
+      <a href="#roles">역할 분리</a>
+      <a href="#pipeline">전체 흐름</a>
+      <a href="#request">Clef 요청 구조</a>
+      <a href="#compare">v0.1 대비 호출 수</a>
+      <a href="#uncertain">불확실 건 처리</a>
+      <a href="#learning">학습과 환류</a>
+      <a href="#gpu">GPU 배분</a>
+      <a href="#policy">차단 정책</a>
+      <a href="#entities">엔티티 코드</a>
+    </nav>
+  </header>
+
+  <section id="roles">
+    <h2>역할 분리</h2>
+    <p>Clef는 텍스트 구간을 출력하지 못하므로, 위치·의미·법적 결론을 서로 다른 구성요소가 담당합니다.</p>
+    <div class="roles">
+      <div class="role"><b>위치 찾기</b><span class="who">규칙 탐지기 · 인코더 태거</span><p>정규식·검증식으로 정형 번호를, Clef로 학습한 소형 인코더로 서술형 개인정보의 구간을 찾습니다.</p></div>
+      <div class="role"><b>의미 판정</b><span class="who">Clef-flash 9B</span><p>후보가 실제 개인정보인지, 어떤 종류인지, 예시값인지를 확률로 판정합니다.</p></div>
+      <div class="role"><b>법적 결론</b><span class="who">정책 엔진 (규칙 테이블)</span><p>법역·적용 지점·엔티티·규모를 조합해 조치와 근거 조항을 결정합니다. 법 개정 시 테이블만 수정합니다.</p></div>
+    </div>
+    <div class="rule">판정 경로의 모든 모델은 순전파 1회로 결과를 반환합니다. 자기회귀 디코더(System 2)는 토큰을 하나씩 생성하므로 판정 경로에서 제외했습니다.</div>
+  </section>
+
+  <section id="pipeline">
+    <h2>전체 흐름</h2>
+    <figure>
+      <div class="scroll">
+      <svg class="dg" viewBox="0 0 960 800" role="img" aria-label="세 적용 지점의 문서가 해체, 정규화, 서식 지문 캐시를 거쳐 규칙 탐지기와 인코더 태거로 후보를 만들고, 창 단위 Clef-flash 1회 판정 후 정책 엔진이 조기 차단, 결과 반환, 보수적 기본값과 검토 대기열 중 하나로 보내는 흐름">
+        <defs>
+          <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+        </defs>
+        <!-- 입력 -->
+        <rect class="box" x="150" y="20" width="200" height="48" rx="5"/>
+        <text class="t" x="250" y="40" text-anchor="middle">망간 자료전송</text>
+        <text class="s" x="250" y="58" text-anchor="middle">N2SF 등급 간 이동</text>
+        <rect class="box" x="380" y="20" width="200" height="48" rx="5"/>
+        <text class="t" x="480" y="40" text-anchor="middle">생성형 AI 입력</text>
+        <text class="s" x="480" y="58" text-anchor="middle">외부 LLM 전송 전</text>
+        <rect class="box" x="610" y="20" width="200" height="48" rx="5"/>
+        <text class="t" x="710" y="40" text-anchor="middle">저장소 일괄 점검</text>
+        <text class="s" x="710" y="58" text-anchor="middle">야간 배치</text>
+        <line class="edge" x1="250" y1="68" x2="400" y2="108" marker-end="url(#a1)"/>
+        <line class="edge" x1="480" y1="68" x2="480" y2="108" marker-end="url(#a1)"/>
+        <line class="edge" x1="710" y1="68" x2="560" y2="108" marker-end="url(#a1)"/>
+
+        <!-- 1 문서 해체 -->
+        <rect class="box" x="300" y="110" width="360" height="48" rx="5"/>
+        <text class="t" x="480" y="130" text-anchor="middle">문서 해체</text>
+        <text class="s" x="480" y="148" text-anchor="middle">HWP·Office·PDF·압축·OCR·메모와 변경 기록</text>
+        <text class="chip" x="650" y="124" text-anchor="end">CPU</text>
+        <line class="edge" x1="480" y1="158" x2="480" y2="188" marker-end="url(#a1)"/>
+
+        <!-- 2 정규화 -->
+        <rect class="box" x="300" y="190" width="360" height="48" rx="5"/>
+        <text class="t" x="480" y="210" text-anchor="middle">정규화</text>
+        <text class="s" x="480" y="228" text-anchor="middle">전각·아랍 숫자, 공백 분리, 제로폭 문자</text>
+        <text class="chip" x="650" y="204" text-anchor="end">CPU</text>
+        <line class="edge" x1="480" y1="238" x2="480" y2="268" marker-end="url(#a1)"/>
+
+        <!-- 3 서식 지문 -->
+        <rect class="box" x="300" y="270" width="360" height="48" rx="5"/>
+        <text class="t" x="480" y="290" text-anchor="middle">서식 지문 캐시</text>
+        <text class="s" x="480" y="308" text-anchor="middle">반복 서식의 고정 문구는 판정 생략</text>
+        <text class="chip" x="650" y="284" text-anchor="end">CPU</text>
+        <line class="edge" x1="430" y1="318" x2="345" y2="348" marker-end="url(#a1)"/>
+        <line class="edge" x1="530" y1="318" x2="615" y2="348" marker-end="url(#a1)"/>
+
+        <!-- 4a / 4b -->
+        <rect class="box" x="230" y="350" width="230" height="56" rx="5"/>
+        <text class="t" x="345" y="374" text-anchor="middle">규칙 탐지기</text>
+        <text class="s" x="345" y="394" text-anchor="middle">정규식·검증식·사전</text>
+        <text class="chip" x="452" y="364" text-anchor="end">CPU</text>
+        <rect class="box gpu" x="500" y="350" width="230" height="56" rx="5"/>
+        <text class="t" x="615" y="374" text-anchor="middle">인코더 태거</text>
+        <text class="s" x="615" y="394" text-anchor="middle">토큰 단위 구간 출력</text>
+        <text class="chip g" x="722" y="364" text-anchor="end">GPU</text>
+        <line class="edge" x1="345" y1="406" x2="420" y2="438" marker-end="url(#a1)"/>
+        <line class="edge" x1="615" y1="406" x2="540" y2="438" marker-end="url(#a1)"/>
+        <text class="lab" x="372" y="430" text-anchor="end">정형 번호</text>
+        <text class="lab" x="588" y="430">서술형 구간</text>
+
+        <!-- 5 창 분할 -->
+        <rect class="box" x="300" y="440" width="360" height="48" rx="5"/>
+        <text class="t" x="480" y="460" text-anchor="middle">창 분할 · 후보 표식</text>
+        <text class="m" x="480" y="478" text-anchor="middle">약 512토큰 창, ⟦C17⟧…⟦/C17⟧</text>
+        <line class="edge a" x1="480" y1="488" x2="480" y2="518" marker-end="url(#a1)"/>
+
+        <!-- 6 Clef -->
+        <rect class="box gpu key" x="240" y="520" width="480" height="70" rx="5"/>
+        <text class="t" x="480" y="543" text-anchor="middle">Clef-flash 창 단위 1회 판정</text>
+        <text class="s" x="480" y="562" text-anchor="middle">후보 판정 + 잔여 개인정보 질문 + 결합 식별성</text>
+        <text class="s" x="480" y="579" text-anchor="middle">문서 카드 KV 캐시 공유, 창 묶음 처리</text>
+        <text class="chip g" x="710" y="534" text-anchor="end">GPU</text>
+        <!-- 잔여 루프 -->
+        <path class="edge a d" d="M240,560 H200 V464 H298" marker-end="url(#a1)"/>
+        <text class="lab-a" x="192" y="506" text-anchor="end">잔여 의심 창</text>
+        <text class="lab" x="192" y="523" text-anchor="end">인코더 저확률 후보 추가 후 재판정</text>
+        <line class="edge" x1="480" y1="590" x2="480" y2="618" marker-end="url(#a1)"/>
+
+        <!-- 7 정책 -->
+        <rect class="box" x="300" y="620" width="360" height="48" rx="5"/>
+        <text class="t" x="480" y="640" text-anchor="middle">정책 엔진</text>
+        <text class="s" x="480" y="658" text-anchor="middle">법역 × 적용 지점 × 엔티티 × 규모 → 조치</text>
+        <text class="chip" x="650" y="634" text-anchor="end">CPU</text>
+        <line class="edge" x1="420" y1="668" x2="185" y2="728" marker-end="url(#a1)"/>
+        <line class="edge" x1="480" y1="668" x2="480" y2="728" marker-end="url(#a1)"/>
+        <line class="edge" x1="540" y1="668" x2="775" y2="728" marker-end="url(#a1)"/>
+        <text class="lab" x="292" y="700" text-anchor="end">고위험 확정</text>
+        <text class="lab" x="488" y="704">안정</text>
+        <text class="lab" x="670" y="700">불안정</text>
+
+        <!-- 8 결과 -->
+        <rect class="box blk" x="60" y="730" width="250" height="52" rx="5"/>
+        <text class="t" x="185" y="752" text-anchor="middle">조기 판정 반환</text>
+        <text class="s" x="185" y="771" text-anchor="middle">차단 결정 즉시 통보, 목록은 이어서 완성</text>
+        <rect class="box ok" x="355" y="730" width="250" height="52" rx="5"/>
+        <text class="t" x="480" y="752" text-anchor="middle">결과 JSON</text>
+        <text class="s" x="480" y="771" text-anchor="middle">엔티티·종류·근거 조항·마스킹 사본</text>
+        <rect class="box hld" x="650" y="730" width="250" height="52" rx="5"/>
+        <text class="t" x="775" y="752" text-anchor="middle">보수적 기본값 + 검토 대기열</text>
+        <text class="s" x="775" y="771" text-anchor="middle">결론이 달라지는 건만 비동기 검토</text>
+
+        <!-- 역할 괄호 -->
+        <path class="brk" d="M752,350 h8 V488 h-8"/>
+        <text class="lab-a" x="770" y="423">위치 찾기</text>
+        <path class="brk" d="M752,520 h8 V590 h-8"/>
+        <text class="lab-a" x="770" y="559">의미 판정</text>
+        <path class="brk" d="M752,620 h8 V668 h-8"/>
+        <text class="lab-a" x="770" y="648">법적 결론</text>
+      </svg>
+      </div>
+      <div class="legend"><span><i class="sw gpu"></i>GPU 모델 (순전파 1회)</span><span><i class="sw cpu"></i>CPU 결정론적 처리</span><span>점선 화살표: 의심 창에 한정한 재판정</span></div>
+      <figcaption>문서 1건의 판정 경로입니다. GPU를 사용하는 단계는 인코더 태거와 Clef-flash 두 곳뿐이며, 둘 다 순전파 1회로 결과를 반환합니다. 잔여 의심 창만 한 번 더 판정합니다.</figcaption>
+    </figure>
+  </section>
+
+  <section id="request">
+    <h2>Clef 요청 구조</h2>
+    <p>요청은 <code>[문서 카드] + [창 본문] + [질문]</code> 순서로 고정합니다. 같은 문서의 창들은 문서 카드 부분의 연산 결과를 공유하고, 한 묶음으로 동시에 처리됩니다.</p>
+    <figure>
+      <div class="scroll">
+      <svg class="dg" viewBox="0 0 960 310" role="img" aria-label="창 세 개가 같은 문서 카드 연산 결과를 재사용하고, 각 창의 후보 질문과 잔여 질문이 묶음 1회 순전파로 질문별 확률을 반환하는 구조">
+        <defs>
+          <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+        </defs>
+        <text class="lab" x="130" y="40" text-anchor="middle">문서 카드</text>
+        <text class="lab" x="340" y="40" text-anchor="middle">창 본문 + 후보 표식</text>
+        <text class="lab" x="580" y="40" text-anchor="middle">질문 묶음</text>
+
+        <text class="t" x="50" y="85" text-anchor="end">창 1</text>
+        <rect class="box gpu" x="60" y="56" width="140" height="48" rx="4"/>
+        <text class="s" x="130" y="77" text-anchor="middle">문서 유형·법역</text>
+        <text class="s" x="130" y="94" text-anchor="middle">데이터 주체 규모</text>
+        <rect class="box" x="204" y="56" width="272" height="48" rx="4"/>
+        <text class="m" x="340" y="85" text-anchor="middle">홍길동(⟦C17⟧900101-…⟦/C17⟧)</text>
+        <rect class="box" x="480" y="56" width="200" height="48" rx="4"/>
+        <text class="s" x="580" y="77" text-anchor="middle">C17 실제·대분류·값 종류</text>
+        <text class="s" x="580" y="94" text-anchor="middle">+ 잔여 질문 R</text>
+
+        <text class="t" x="50" y="153" text-anchor="end">창 2</text>
+        <rect class="box dash" x="60" y="124" width="140" height="48" rx="4"/>
+        <text class="s" x="130" y="153" text-anchor="middle">캐시 재사용</text>
+        <rect class="box" x="204" y="124" width="272" height="48" rx="4"/>
+        <text class="m" x="340" y="153" text-anchor="middle">법인등록번호 ⟦C18⟧110111-…</text>
+        <rect class="box" x="480" y="124" width="200" height="48" rx="4"/>
+        <text class="s" x="580" y="145" text-anchor="middle">C18 실제·대분류</text>
+        <text class="s" x="580" y="162" text-anchor="middle">+ 잔여 질문 R</text>
+
+        <text class="t" x="50" y="221" text-anchor="end">창 3</text>
+        <rect class="box dash" x="60" y="192" width="140" height="48" rx="4"/>
+        <text class="s" x="130" y="221" text-anchor="middle">캐시 재사용</text>
+        <rect class="box" x="204" y="192" width="272" height="48" rx="4"/>
+        <text class="m" x="340" y="221" text-anchor="middle">…우울증으로 3주간 병가…</text>
+        <rect class="box" x="480" y="192" width="200" height="48" rx="4"/>
+        <text class="s" x="580" y="213" text-anchor="middle">후보 없음</text>
+        <text class="s" x="580" y="230" text-anchor="middle">잔여 질문 R · R 대분류</text>
+
+        <path class="brk" d="M690,56 h8 V240 h-8"/>
+        <line class="edge a" x1="698" y1="148" x2="746" y2="148" marker-end="url(#a2)"/>
+        <text class="lab-a" x="722" y="138" text-anchor="middle">1회</text>
+
+        <rect class="box" x="750" y="56" width="200" height="184" rx="4"/>
+        <text class="t" x="765" y="80">질문별 확률</text>
+        <text class="s" x="765" y="104">C17 실제 여부</text><text class="m" x="935" y="104" text-anchor="end">0.97</text>
+        <rect class="track" x="765" y="110" width="170" height="7" rx="2"/><rect class="bar" x="765" y="110" width="165" height="7" rx="2"/>
+        <text class="s" x="765" y="138">C18 실제 여부</text><text class="m" x="935" y="138" text-anchor="end">0.04</text>
+        <rect class="track" x="765" y="144" width="170" height="7" rx="2"/><rect class="bar" x="765" y="144" width="7" height="7" rx="2"/>
+        <text class="s" x="765" y="172">창 3 잔여 개인정보</text><text class="m" x="935" y="172" text-anchor="end">0.86</text>
+        <rect class="track" x="765" y="178" width="170" height="7" rx="2"/><rect class="bar" x="765" y="178" width="146" height="7" rx="2"/>
+        <text class="s" x="765" y="206">R 대분류 = 민감</text><text class="m" x="935" y="206" text-anchor="end">0.81</text>
+        <rect class="track" x="765" y="212" width="170" height="7" rx="2"/><rect class="bar" x="765" y="212" width="138" height="7" rx="2"/>
+
+        <rect class="box gpu" x="60" y="268" width="18" height="14" rx="2"/>
+        <text class="lab" x="86" y="280">연산 수행</text>
+        <rect class="box dash" x="170" y="268" width="18" height="14" rx="2"/>
+        <text class="lab" x="196" y="280">앞 창의 연산 결과 재사용 (KV 캐시)</text>
+      </svg>
+      </div>
+      <figcaption>창 2의 13자리 번호는 주민등록번호와 형식이 같지만 "법인등록번호" 문맥 때문에 실제 개인정보 확률이 0.04로 판정됩니다. 창 3은 정규식 후보가 없지만 잔여 질문이 0.86으로 나와 재판정 대상이 됩니다. 확률값은 설명용 예시입니다.</figcaption>
+    </figure>
+  </section>
+
+  <section id="compare">
+    <h2>v0.1 대비 호출 수</h2>
+    <p>10쪽 인사 문서(약 5,000토큰) 기준 추정입니다. 막대 길이는 Clef 호출 횟수에 비례합니다.</p>
+    <figure>
+      <div class="scroll">
+      <svg class="dg" viewBox="0 0 960 250" role="img" aria-label="v0.1은 Clef 호출 82회와 별도의 디코더 생성 시간이 필요하고, v0.2는 호출 13회이며 디코더가 없음">
+        <text class="t" x="138" y="73" text-anchor="end">v0.1</text>
+        <rect class="seg-card" x="150" y="50" width="9.5" height="36"/>
+        <rect class="seg-main" x="159.5" y="50" width="47.5" height="36"/>
+        <rect class="seg-re" x="207" y="50" width="570" height="36"/>
+        <rect class="seg-pert" x="777" y="50" width="152" height="36"/>
+        <text class="t" x="492" y="73" text-anchor="middle" style="fill:var(--fg)">문단별 재검사 60회</text>
+        <text class="t" x="853" y="73" text-anchor="middle" style="fill:var(--surface)">섭동 16회</text>
+        <text class="m" x="929" y="40" text-anchor="end">합계 82회</text>
+        <text class="lab" x="150" y="104">문서 카드 1 · 후보 판정 5</text>
+        <rect class="dec" x="150" y="114" width="779" height="28" rx="3"/>
+        <text class="tb" x="540" y="133" text-anchor="middle">+ 디코더(System 2) 생성 시간: 출력 토큰 수에 비례하는 별도 지연</text>
+
+        <text class="t" x="138" y="193" text-anchor="end">v0.2</text>
+        <rect class="seg-card" x="150" y="170" width="9.5" height="36"/>
+        <rect class="seg-main" x="159.5" y="170" width="95" height="36"/>
+        <rect class="seg-re" x="254.5" y="170" width="19" height="36"/>
+        <text class="m" x="284" y="193">합계 13회</text>
+        <text class="lab" x="150" y="226">문서 카드 1 · 창 단위 통합 판정 10 · 의심 창 재판정 2 · 디코더 없음</text>
+
+        <line class="tick" x1="150" y1="44" x2="150" y2="212"/>
+      </svg>
+      </div>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--muted);border-color:var(--muted)"></i>문서 카드</span>
+        <span><i class="sw" style="background:var(--accent);border-color:var(--accent)"></i>후보·창 판정</span>
+        <span><i class="sw" style="background:var(--accent-2);border-color:var(--accent-2)"></i>재검사·재판정</span>
+        <span><i class="sw" style="background:var(--mask);border-color:var(--mask)"></i>섭동 검사</span>
+      </div>
+      <figcaption>v0.2에서는 잔여 질문을 창 판정 요청에 포함하여 문단별 재검사 60회를 없앴습니다. 섭동 검사는 야간 저장소 점검에서만 선택적으로 실행합니다. 또한 창 10개를 한 묶음으로 처리하므로, 순서대로 기다리는 단계는 문서 카드, 창 묶음, 의심 창의 3단계입니다.</figcaption>
+    </figure>
+  </section>
+
+  <section id="uncertain">
+    <h2>불확실 건 처리</h2>
+    <p>불확실성은 이미 계산된 값으로 측정하고, 상위 모델로 넘기지 않습니다. 해석이 갈려도 조치가 같으면 결론에 영향이 없으므로 그대로 처리합니다.</p>
+    <figure>
+      <div class="scroll">
+      <svg class="dg" viewBox="0 0 960 290" role="img" aria-label="불확실성 신호가 발생하면 해석별 조치가 같은지 확인하고, 같으면 그대로 적용, 다르면 가장 엄격한 해석의 조치를 적용 지점별로 적용">
+        <defs>
+          <marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+        </defs>
+        <rect class="box" x="20" y="40" width="230" height="200" rx="5"/>
+        <text class="t" x="38" y="68">불확실성 신호</text>
+        <text class="s" x="38" y="98">확률 여백 &lt; 0.2</text>
+        <text class="s" x="38" y="124">대분류·세부 유형 모순</text>
+        <text class="s" x="38" y="150">규칙·인코더·Clef 불일치</text>
+        <text class="s" x="38" y="176">잔여 질문 높음, 후보 없음</text>
+        <text class="lab-a" x="38" y="220">추가 호출 없음</text>
+        <line class="edge" x1="250" y1="140" x2="288" y2="140" marker-end="url(#a4)"/>
+
+        <polygon class="box key" points="390,84 490,140 390,196 290,140"/>
+        <text class="t" x="390" y="136" text-anchor="middle">해석별 조치가</text>
+        <text class="t" x="390" y="155" text-anchor="middle">같은가?</text>
+
+        <path class="edge" d="M490,140 H520 V60 H558" marker-end="url(#a4)"/>
+        <text class="tk" x="528" y="52">예</text>
+        <path class="edge" d="M490,140 H520 V195 H558" marker-end="url(#a4)"/>
+        <text class="th" x="528" y="216">아니오</text>
+
+        <rect class="box ok" x="560" y="32" width="380" height="56" rx="5"/>
+        <text class="t" x="578" y="56">같은 조치 그대로 적용</text>
+        <text class="s" x="578" y="76">검토 대기열에 넣지 않음</text>
+
+        <rect class="box hld" x="560" y="112" width="380" height="166" rx="5"/>
+        <text class="t" x="578" y="138">가장 엄격한 해석의 조치 적용</text>
+        <line class="tick" x1="578" y1="152" x2="922" y2="152"/>
+        <text class="s" x="578" y="178">망간 자료전송</text><text class="th" x="922" y="178" text-anchor="end">보류 (검토자 승인)</text>
+        <text class="s" x="578" y="214">생성형 AI 입력</text><text class="th" x="922" y="214" text-anchor="end">마스킹 또는 차단</text>
+        <text class="s" x="578" y="250">저장소 일괄 점검</text><text class="th" x="922" y="250" text-anchor="end">검토 대기열</text>
+      </svg>
+      </div>
+      <figcaption>예: 사우디 문서의 10자리 숫자가 국민 신분증 번호 0.48, 계좌번호 0.41로 판정되면 확률 여백이 작아 불확실 건이 됩니다. 두 해석 모두 마스킹 대상이므로 조치가 같아 검토 대기열에 넣지 않습니다. 근거 문장은 디코더 대신 엔티티 코드, 조항 테이블, 확률을 조합한 템플릿으로 만듭니다.</figcaption>
+    </figure>
+  </section>
+
+  <section id="learning">
+    <h2>학습과 환류</h2>
+    <p>반복 호출이 많은 작업(토큰 단위 정답 표시, 섭동 검사)은 오프라인으로 분리합니다. 판정 경로에는 학습 결과만 배포합니다.</p>
+    <figure>
+      <div class="scroll">
+      <svg class="dg" viewBox="0 0 960 380" role="img" aria-label="오프라인에서 합성 문서, 자동 정답 표시, 학습, 온도 보정을 거쳐 인코더 태거와 Clef-flash에 배포하고, 온라인 검토자 판정이 다시 정답 표시 단계로 환류되는 구조">
+        <defs>
+          <marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+        </defs>
+        <rect class="box band" x="10" y="40" width="940" height="140" rx="6"/>
+        <text class="lab-a" x="30" y="64">오프라인 · 야간 또는 공급사</text>
+        <rect class="box" x="30" y="90" width="190" height="56" rx="5"/>
+        <text class="t" x="125" y="113" text-anchor="middle">합성 문서</text>
+        <text class="s" x="125" y="132" text-anchor="middle">검증식 통과 가상 번호</text>
+        <rect class="box" x="260" y="90" width="210" height="56" rx="5"/>
+        <text class="t" x="365" y="113" text-anchor="middle">자동 정답 표시</text>
+        <text class="s" x="365" y="132" text-anchor="middle">규칙 + Clef + 토큰 지정 질문</text>
+        <rect class="box" x="510" y="90" width="190" height="56" rx="5"/>
+        <text class="t" x="605" y="113" text-anchor="middle">학습</text>
+        <text class="s" x="605" y="132" text-anchor="middle">Clef LoRA · 인코더 태거</text>
+        <rect class="box" x="740" y="90" width="190" height="56" rx="5"/>
+        <text class="t" x="835" y="113" text-anchor="middle">온도 보정</text>
+        <text class="s" x="835" y="132" text-anchor="middle">양자화 후 현장 검증셋</text>
+        <line class="edge" x1="220" y1="118" x2="258" y2="118" marker-end="url(#a5)"/>
+        <line class="edge" x1="470" y1="118" x2="508" y2="118" marker-end="url(#a5)"/>
+        <line class="edge" x1="700" y1="118" x2="738" y2="118" marker-end="url(#a5)"/>
+
+        <line class="tick" x1="10" y1="200" x2="950" y2="200" stroke-dasharray="6 5"/>
+        <text class="lab" x="940" y="194" text-anchor="end">판정 경로와 분리</text>
+
+        <path class="edge a" d="M835,146 V168 H125 V268" marker-end="url(#a5)"/>
+        <path class="edge a" d="M365,168 V268" marker-end="url(#a5)"/>
+        <text class="lab-a" x="600" y="162" text-anchor="middle">배포</text>
+
+        <text class="lab-a" x="30" y="244">온라인 판정 경로</text>
+        <rect class="box gpu" x="30" y="270" width="190" height="56" rx="5"/>
+        <text class="t" x="125" y="303" text-anchor="middle">인코더 태거</text>
+        <rect class="box gpu" x="260" y="270" width="210" height="56" rx="5"/>
+        <text class="t" x="365" y="303" text-anchor="middle">Clef-flash</text>
+        <rect class="box hld" x="510" y="270" width="190" height="56" rx="5"/>
+        <text class="t" x="605" y="303" text-anchor="middle">검토 대기열</text>
+        <rect class="box" x="740" y="270" width="190" height="56" rx="5"/>
+        <text class="t" x="835" y="293" text-anchor="middle">검토자 판정</text>
+        <text class="s" x="835" y="312" text-anchor="middle">비식별 처리 후 저장</text>
+        <line class="edge" x1="220" y1="298" x2="258" y2="298" marker-end="url(#a5)"/>
+        <line class="edge" x1="470" y1="298" x2="508" y2="298" marker-end="url(#a5)"/>
+        <line class="edge" x1="700" y1="298" x2="738" y2="298" marker-end="url(#a5)"/>
+
+        <path class="edge d" d="M930,298 H948 V18 H365 V88" marker-end="url(#a5)"/>
+        <text class="lab" x="656" y="34" text-anchor="middle">검토자 판정 환류 (월 단위 재학습)</text>
+      </svg>
+      </div>
+      <figcaption>Clef는 교사 모델로서 인코더 태거의 정답 표시를 만듭니다. 판정 경로에서는 인코더가 위치를, Clef가 의미를 담당합니다. 디코더를 사용한다면 합성 문서 생성처럼 판정과 무관한 오프라인 작업에만 사용합니다.</figcaption>
+    </figure>
+  </section>
+
+  <section id="gpu">
+    <h2>GPU 배분 (24GB 1장)</h2>
+    <p>막대 길이는 메모리 용량에 비례합니다. 범위로 제시한 값은 중간값으로 그렸으며 실측 전 추정치입니다.</p>
+    <figure>
+      <div class="scroll">
+      <svg class="dg" viewBox="0 0 960 170" role="img" aria-label="24GB 중 Clef-flash 8비트 약 11GB, KV 캐시와 묶음 약 7GB, 인코더 태거 약 1GB, 여유 약 5GB">
+        <g>
+          <line class="tick" x1="40" y1="40" x2="40" y2="102"/><text class="lab" x="40" y="32" text-anchor="middle">0</text>
+          <line class="tick" x1="180" y1="40" x2="180" y2="46"/><text class="lab" x="180" y="32" text-anchor="middle">4</text>
+          <line class="tick" x1="320" y1="40" x2="320" y2="46"/><text class="lab" x="320" y="32" text-anchor="middle">8</text>
+          <line class="tick" x1="460" y1="40" x2="460" y2="46"/><text class="lab" x="460" y="32" text-anchor="middle">12</text>
+          <line class="tick" x1="600" y1="40" x2="600" y2="46"/><text class="lab" x="600" y="32" text-anchor="middle">16</text>
+          <line class="tick" x1="740" y1="40" x2="740" y2="46"/><text class="lab" x="740" y="32" text-anchor="middle">20</text>
+          <line class="tick" x1="880" y1="40" x2="880" y2="102"/><text class="lab" x="880" y="32" text-anchor="middle">24 GB</text>
+        </g>
+        <rect class="seg-main" x="40" y="50" width="385" height="44"/>
+        <rect class="seg-re" x="425" y="50" width="245" height="44"/>
+        <rect class="seg-card" x="670" y="50" width="35" height="44"/>
+        <rect class="seg-free" x="705" y="50" width="175" height="44"/>
+        <text class="t" x="232" y="77" text-anchor="middle" style="fill:var(--surface)">Clef-flash 8비트 · 10~12GB</text>
+        <text class="t" x="547" y="77" text-anchor="middle" style="fill:var(--fg)">KV 캐시·묶음 · 6~8GB</text>
+        <text class="s" x="792" y="77" text-anchor="middle">여유 약 5GB</text>
+        <line class="tick" x1="687" y1="94" x2="687" y2="118" style="stroke:var(--muted)"/>
+        <text class="lab" x="687" y="134" text-anchor="middle">인코더 태거 약 1GB</text>
+        <text class="lab" x="40" y="158">CPU: 문서 해체, OCR(기본), 정규화, 규칙 탐지기, 서식 지문 캐시, 정책 엔진</text>
+      </svg>
+      </div>
+      <figcaption>Clef-flash는 bf16 원본의 가중치만 약 18GB이므로 8비트 양자화를 사용합니다. 양자화 후에는 현장 검증셋으로 확률 보정을 다시 수행합니다. Clef-27B(bf16 약 54GB)는 이 사양에서 사용할 수 없습니다.</figcaption>
+    </figure>
+  </section>
+
+  <section id="policy">
+    <h2>차단 정책 (기본값 예시)</h2>
+    <p>법역이 여러 개이면 가장 엄격한 규칙을 적용합니다. 예를 들어 한국 기관 문서에 일본인 직원의 마이넘버가 있으면, 한국 규칙과 일본 번호법 규칙 중 엄격한 쪽을 적용합니다.</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>엔티티 그룹</th><th>망간 자료전송</th><th>생성형 AI 입력</th><th>저장소 일괄 점검</th></tr></thead>
+        <tbody>
+          <tr><td>고유식별번호 <span class="muted mono">RRN · MyNumber · SSN · Iqama</span></td><td><span class="pill p-block">차단</span></td><td><span class="pill p-block">차단</span> 또는 <span class="pill p-mask">마스킹</span></td><td><span class="pill p-log">위반 등록</span> 암호화 확인</td></tr>
+          <tr><td>민감정보 <span class="muted">건강·범죄경력·신념 등</span></td><td><span class="pill p-block">차단</span></td><td><span class="pill p-block">차단</span></td><td><span class="pill p-log">위반 등록</span> 접근권한 점검</td></tr>
+          <tr><td>금융 <span class="muted">계좌·카드·IBAN</span></td><td><span class="pill p-block">차단</span></td><td><span class="pill p-mask">마스킹</span></td><td><span class="pill p-log">위반 등록</span></td></tr>
+          <tr><td>연락처·성명 (소량)</td><td><span class="pill p-mask">마스킹</span></td><td><span class="pill p-mask">마스킹</span></td><td><span class="pill p-log">기록</span></td></tr>
+          <tr><td>연락처·성명 (대량, 예: 100명 초과)</td><td><span class="pill p-block">차단</span></td><td><span class="pill p-block">차단</span></td><td><span class="pill p-log">위반 등록</span></td></tr>
+          <tr><td>결합 식별 위험 <span class="muted">준식별자 조합</span></td><td><span class="pill p-hold">보류</span></td><td><span class="pill p-mask">마스킹</span></td><td><span class="pill p-log">기록</span></td></tr>
+          <tr><td>예시·샘플값 (검증식 통과)</td><td><span class="pill p-hold">보류</span></td><td><span class="pill p-ok">허용</span></td><td><span class="pill p-log">경고</span></td></tr>
+          <tr><td>판정 불안정 (조치가 갈리는 경우)</td><td><span class="pill p-hold">보류</span></td><td><span class="pill p-block">차단</span></td><td><span class="pill p-hold">검토 대기열</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="entities">
+    <h2>엔티티 코드 (주요 항목)</h2>
+    <p>코드 형식은 <code>{법역}.{대분류}.{세부 유형}</code>입니다. Clef에는 대분류(약 10개)를 먼저 묻고, 세부 유형은 추정 법역에 맞춘 5~20개 선택지로 묻습니다. 이렇게 하면 선택지 255개 제한 안에서 유형 간 혼동을 줄일 수 있습니다.</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>대한민국</th><th>일본</th><th>미국</th><th>사우디아라비아</th></tr></thead>
+        <tbody><tr>
+          <td><div class="codes">
+            <span>KR.ID.RRN<small>주민등록번호</small></span>
+            <span>KR.ID.FRN<small>외국인등록번호</small></span>
+            <span>KR.ID.PASSPORT<small>여권번호</small></span>
+            <span>KR.ID.DRIVER<small>운전면허번호</small></span>
+            <span>KR.FIN.ACCOUNT<small>계좌번호</small></span>
+            <span>KR.SENS.*<small>법 제23조 민감정보</small></span>
+          </div></td>
+          <td><div class="codes">
+            <span>JP.ID.MYNUMBER<small>個人番号</small></span>
+            <span>JP.ID.PASSPORT<small>旅券番号</small></span>
+            <span>JP.ID.RESIDENCE_CARD<small>在留カード</small></span>
+            <span>JP.ID.PENSION<small>基礎年金番号</small></span>
+            <span>JP.ORG.CORPNUM<small>法人番号(오탐 구분)</small></span>
+            <span>JP.SENS.*<small>要配慮個人情報</small></span>
+          </div></td>
+          <td><div class="codes">
+            <span>US.ID.SSN<small>사회보장번호</small></span>
+            <span>US.ID.ITIN<small>납세자번호</small></span>
+            <span>US.ID.DRIVER<small>주 운전면허</small></span>
+            <span>US.ID.MBI<small>Medicare 번호</small></span>
+            <span>US.LOC.PRECISE<small>정밀 위치</small></span>
+            <span>US.SENS.*<small>CCPA 민감정보·PHI</small></span>
+          </div></td>
+          <td><div class="codes">
+            <span>SA.ID.NATIONAL<small>국민 신분증(1로 시작)</small></span>
+            <span>SA.ID.IQAMA<small>체류허가(2로 시작)</small></span>
+            <span>SA.FIN.IBAN<small>SA + 22자리</small></span>
+            <span>SA.CONTACT.MOBILE<small>+966 5x</small></span>
+            <span>SA.DEMO.HIJRI_DOB<small>이슬람력 생년월일</small></span>
+            <span>SA.SENS.*<small>PDPL 민감정보</small></span>
+          </div></td>
+        </tr></tbody>
+      </table>
+    </div>
+    <p class="muted">2020년 10월 이후 발급된 주민등록번호는 검증식이 맞지 않을 수 있으므로, 검증식 결과는 보조 신호로만 사용합니다.</p>
+  </section>
+
+  <footer>
+    <span>원문: 저장소 <span class="mono">eroun-ai/N2SF</span>의 <span class="mono">docs/PII_DETECTION_PROPOSAL.md</span> (v0.2)</span>
+    <span>Clef 관련 수치는 공개 보도 기준이며, 공식 모델 카드와 24GB GPU 실측으로 다시 확인해야 합니다.</span>
+  </footer>
+</div>
+</body>
+</html>

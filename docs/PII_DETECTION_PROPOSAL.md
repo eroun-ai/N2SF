@@ -8,6 +8,7 @@
 | 처리 형식 | HWP/HWPX, DOCX/XLSX/PPTX, PDF(텍스트·스캔), 이미지(신분증·사진), 압축 파일 |
 | 하드웨어 기준 | 고객사 서버 1대 + 24GB급 GPU 1장(RTX 4090 / L4 / A10 계열) |
 | 판정 모델 | Cloudflare Clef-flash (9B, Apache 2.0, 오픈 가중치) |
+| 도식 | [PII_DETECTION_DIAGRAMS.html](PII_DETECTION_DIAGRAMS.html) — 전체 흐름, 요청 구조, 불확실 건 처리, 학습 환류, GPU 배분 |
 
 > **자료 출처 관련 안내**: 이 문서를 작성한 환경에서는 Cloudflare 블로그 원문과 Hugging Face 모델 카드에 직접 접속할 수 없었습니다. Clef 관련 수치와 API 특성은 공개 보도·검색 요약을 근거로 정리했으며, 구현 착수 전에 공식 모델 카드와 API 명세로 다시 확인해야 합니다. 확인이 필요한 항목에는 `[확인 필요]`를 표시했습니다.
 
