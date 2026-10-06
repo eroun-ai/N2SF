@@ -130,9 +130,9 @@ footer { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line);
 
 <div class="wrap">
   <header class="top">
-    <div class="eyebrow">설계 제안서 v0.2 · 도식 모음</div>
+    <div class="eyebrow">설계 제안서 v0.3 · 도식 모음</div>
     <h1>Clef 개인정보 판별 설계</h1>
-    <p class="lede">온프레미스 환경(24GB GPU 1장)에서 문서 속 개인정보의 존재 여부, 엔티티 종류, 차단 여부를 판정하는 구조입니다. 대상 법역은 한국, 일본, 미국, 사우디아라비아이며, 판정 경로에는 디코더를 두지 않습니다.</p>
+    <p class="lede">온프레미스 환경(24GB GPU 1장)에서 문서 속 개인정보의 존재 여부, 엔티티 종류, 차단 여부를 판정하는 구조입니다. 대상 법역은 한국, 일본, 미국, 사우디아라비아이며, 판정 경로에는 디코더를 두지 않습니다. 이름·주소를 포함한 개인정보 판별 기준은 pii-ner-x 기준을 따릅니다.</p>
     <nav class="toc" aria-label="절 이동">
       <a href="#roles">역할 분리</a>
       <a href="#pipeline">전체 흐름</a>
@@ -519,6 +519,7 @@ footer { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line);
           <tr><td>결합 식별 위험 <span class="muted">준식별자 조합</span></td><td><span class="pill p-hold">보류</span></td><td><span class="pill p-mask">마스킹</span></td><td><span class="pill p-log">기록</span></td></tr>
           <tr><td>예시·샘플값 (검증식 통과)</td><td><span class="pill p-hold">보류</span></td><td><span class="pill p-ok">허용</span></td><td><span class="pill p-log">경고</span></td></tr>
           <tr><td>판정 불안정 (조치가 갈리는 경우)</td><td><span class="pill p-hold">보류</span></td><td><span class="pill p-block">차단</span></td><td><span class="pill p-hold">검토 대기열</span></td></tr>
+          <tr><td>직무 수행 공무원 성명 <span class="muted">pii-ner-x 기준 확인 전 초안</span></td><td>기관 설정 <span class="muted">(기본값: 일반 성명과 동일)</span></td><td>기관 설정 <span class="muted">(기본값: 마스킹)</span></td><td><span class="pill p-log">기록</span></td></tr>
         </tbody>
       </table>
     </div>
@@ -526,6 +527,7 @@ footer { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line);
 
   <section id="entities">
     <h2>엔티티 코드 (주요 항목)</h2>
+    <p class="rule">아래 코드는 pii-ner-x 기준을 확인하기 전에 작성한 임시 코드입니다. 이름·주소를 포함한 모든 판별 기준은 pii-ner-x 라벨 체계로 교체합니다.</p>
     <p>코드 형식은 <code>{법역}.{대분류}.{세부 유형}</code>입니다. Clef에는 대분류(약 10개)를 먼저 묻고, 세부 유형은 추정 법역에 맞춘 5~20개 선택지로 묻습니다. 이렇게 하면 선택지 255개 제한 안에서 유형 간 혼동을 줄일 수 있습니다.</p>
     <div class="tbl-wrap">
       <table>
@@ -570,7 +572,7 @@ footer { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line);
   </section>
 
   <footer>
-    <span>원문: 저장소 <span class="mono">eroun-ai/N2SF</span>의 <span class="mono">docs/PII_DETECTION_PROPOSAL.md</span> (v0.2)</span>
+    <span>원문: 저장소 <span class="mono">eroun-ai/N2SF</span>의 <span class="mono">docs/PII_DETECTION_PROPOSAL.md</span> (v0.3), 검토 안내 <span class="mono">docs/HANDOFF_PII_NER_X.md</span></span>
     <span>Clef 관련 수치는 공개 보도 기준이며, 공식 모델 카드와 24GB GPU 실측으로 다시 확인해야 합니다.</span>
   </footer>
 </div>
